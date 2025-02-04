@@ -43,3 +43,4 @@ Migrations/ApplicationDbContextModelSnapshot.cs
 # Log files
 *.log
 *.log.*
+~$Testdata.xlsx
