@@ -1,0 +1,45 @@
+# .gitignore for TestProject
+
+# Build artifacts
+bin/
+obj/
+
+# IDE-specific files
+.vs/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln.docstates
+
+# Test files and results
+*.test.dll
+TestProject.Tests.dll
+TestResults/
+
+# Node modules and JavaScript-related files
+node_modules/
+package-lock.json
+package.json
+yarn.lock
+yarn-error.log
+
+# Environment-specific files
+appsettings.Development.json
+appsettings.json
+launchSettings.json
+
+# Project-specific exclusions
+!.gitignore
+!TestProject.csproj
+!TestProject.sln
+
+# Migration files
+Migrations/
+!Migrations/*.cs
+!Migrations/*.Designer.cs
+Migrations/ApplicationDbContextModelSnapshot.cs
+
+# Log files
+*.log
+*.log.*

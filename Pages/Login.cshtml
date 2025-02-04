@@ -1,0 +1,45 @@
+@page
+@model TestProject.Pages.LoginModel
+@{
+    ViewData["Title"] = "Login";
+}
+
+@Html.AntiForgeryToken()
+<div class="container mt-5">
+    <div class="text-center mb-4">
+        <h1 class="text-4xl font-bold">Selecteer gebruiker</h1>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        @foreach (var user in Model.Users)
+        {
+            <div class="col-span-1">
+                <div class="bg-gray-100 shadow-md rounded-lg cursor-pointer" onclick="selectUser('@user.Id')">
+                    <div class="card-body text-center flex flex-col justify-between h-full">
+                        <div>
+                            <h3 class="text-2xl font-semibold mb-2">@user.Name</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<script>
+    function selectUser(userId) {
+        fetch('/Login?handler=SelectUser', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            },
+            body: JSON.stringify({ userId }),
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.href = '/';
+            }
+        });
+    }
+</script>

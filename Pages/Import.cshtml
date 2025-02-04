@@ -1,0 +1,42 @@
+@page
+@model TestProject.Pages.ImportModel
+@{
+    ViewData["Title"] = "Import Products";
+}
+
+<div class="container">
+    <h1>Import Products</h1>
+    
+    <!-- Form for importing Excel file -->
+    <form method="post" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="file">Select Excel File</label>
+            <input type="file" class="form-control-file" name="file" id="file" accept=".xlsx" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Import</button>
+    </form>
+
+    <!-- Form for flushing the Products table -->
+    <form method="post" class="mt-3">
+        <button type="submit" asp-page-handler="FlushProducts" class="btn btn-danger">Flush Products Table</button>
+    </form>
+
+    <!-- Display import status messages -->
+    @if (Model.ImportStatus != null)
+    {
+        <div class="mt-3">
+            @if (Model.ImportStatus.Success)
+            {
+                <div class="alert alert-success">
+                    @Model.ImportStatus.Message
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-danger">
+                    @Model.ImportStatus.Message
+                </div>
+            }
+        </div>
+    }
+</div>

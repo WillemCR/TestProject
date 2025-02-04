@@ -1,0 +1,105 @@
+@page
+@model ScanModel
+@{
+    ViewData["Title"] = "Scan Products";
+}
+
+<h1 class="text-3xl font-bold mb-4">@ViewData["Title"]</h1>
+
+<div class="flex flex-col mb-4">
+    <div class="mb-2">
+        <label for="barcodeInput" class="block text-sm font-medium text-gray-700">Scan Barcode:</label>
+        <input type="text" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" id="barcodeInput" autofocus />
+    </div>
+</div>
+
+<div class="mt-4 overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gescand</th>
+                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order No</th>
+                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Verzendwijze</th>
+                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Klantnaam</th>
+                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Klantnummer</th>
+                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orderregelnummer</th>
+                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Datum</th>
+                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gefactureerd</th>
+                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Opgehaald</th>
+                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Losartikel</th>
+                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Handtekening</th>
+                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bron</th>
+                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artikelomschrijving</th>
+                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lengte</th>
+                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Colli</th>
+                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aantal</th>
+                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Referentie</th>
+                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voertuig</th>
+                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Adres</th>
+                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Volgorde</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            @foreach (var product in Model.Products)
+            {
+                <tr>
+                    <td class="px-3 py-2 whitespace-nowrap"><input type="checkbox" class="scanned-checkbox" disabled /></td>
+                    <td class="px-3 py-2 whitespace-nowrap" data-barcode="@product.id">@product.id</td>
+                    <td class="px-3 py-2 whitespace-nowrap">@product.orderno</td>
+                    <td class="px-3 py-2 whitespace-nowrap">@product.verzendwijze</td>
+                    <td class="px-3 py-2 whitespace-nowrap">@product.klantnaam</td>
+                    <td class="px-3 py-2 whitespace-nowrap">@product.klantnummer</td>
+                    <td class="px-3 py-2 whitespace-nowrap">@product.status</td>
+                    <td class="px-3 py-2 whitespace-nowrap">@product.orderregelnummer</td>
+                    <td class="px-3 py-2 whitespace-nowrap">@product.datum</td>
+                    <td class="px-3 py-2 whitespace-nowrap">@product.gefactureerd</td>
+                    <td class="px-3 py-2 whitespace-nowrap">@product.opgehaald</td>
+                    <td class="px-3 py-2 whitespace-nowrap">@product.losartikel</td>
+                    <td class="px-3 py-2 whitespace-nowrap">@product.handtekening</td>
+                    <td class="px-3 py-2 whitespace-nowrap">@product.bron</td>
+                    <td class="px-3 py-2 whitespace-nowrap">@product.artikelomschrijving</td>
+                    <td class="px-3 py-2 whitespace-nowrap">@product.lengte</td>
+                    <td class="px-3 py-2 whitespace-nowrap">@product.colli</td>
+                    <td class="px-3 py-2 whitespace-nowrap">@product.aantal</td>
+                    <td class="px-3 py-2 whitespace-nowrap">@product.referentie</td>
+                    <td class="px-3 py-2 whitespace-nowrap">@product.voertuig</td>
+                    <td class="px-3 py-2 whitespace-nowrap">@product.adres</td>
+                    <td class="px-3 py-2 whitespace-nowrap">@product.volgorde</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('barcodeInput').addEventListener('input', function() {
+                const barcode = this.value.trim();
+                if (barcode.length > 0) {
+                    const row = document.querySelector(`[data-barcode="${barcode}"]`);
+                    if (row) {
+                        row.querySelector('.scanned-checkbox').checked = true;
+                        this.value = '';
+                    }
+                }
+            });
+
+            document.querySelector('#productsTable').addEventListener('change', function(event) {
+                if (event.target.classList.contains('scanned-checkbox')) {
+                    const barcode = event.target.closest('tr').getAttribute('data-barcode');
+                    fetch('?handler=Scan', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                        },
+                        body: 'barcode=' + encodeURIComponent(barcode)
+                    });
+                }
+            });
+        });
+    </script>
+}
