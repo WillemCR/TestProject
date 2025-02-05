@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="~/TestProject.styles.css" asp-append-version="true" />
     <link rel="stylesheet" href="/css/styles.css">
 </head>
-<body>
+<body class="min-h-screen flex flex-col">
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container">
@@ -29,27 +29,75 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-page="/Import">Import</a>
                         </li>
-                        
+                       <li class="nav-item">
+                            @if (User.Identity.IsAuthenticated)
+                            {
+                                <span class="nav-link text-dark content-end">
+                                    @User.Identity.Name
+                                    <form id="logoutForm" method="post" action="/Login?handler=Logout">
+                                        @Html.AntiForgeryToken()
+                                        <button type="button" onclick="handleLogout()" class="bg-blue-50">
+                                            Logout
+                                        </button>
+                                    </form>
+                                </span>
+                            }
+                            else
+                            {
+                                <a class="nav-link text-dark" asp-area="" asp-page="/Login">Login</a>
+                            }
+                        </li>
                     </ul>
-                            </div>
+            </div>
         </nav>
     </header>
     <div class="container">
-        <main role="main" class="pb-3">
+        <main role="main" class="pb-3 flex-grow">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
+    <footer class="border-t mt-auto text-muted p-4">
+        <div class="container mx-auto">
             &copy; 2025 - TestProject - <a asp-area="" asp-page="/Privacy">Privacy</a>
         </div>
     </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
 
-    @await RenderSectionAsync("Scripts", required: false)
+       function handleLogout() {
+    const form = document.getElementById('logoutForm');
+    const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
+
+    if (!tokenInput) {
+        console.error("CSRF token not found.");
+        return;
+    }
+
+    // Ensure the RequestVerificationToken is correctly passed in the body
+    fetch('/Login?handler=LogoutHandler', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+            '__RequestVerificationToken': tokenInput.value
+        })
+    })
+    .then(response => {
+        if (response.ok) {
+            window.location.href = '/';
+        } else {
+            return response.text().then(text => { throw new Error(text); });
+        }
+    })
+    .catch(error => {
+        console.error('Logout request failed:', error);
+        alert('Logout failed. Please try again.');
+    });
+}
+
+</script>
+@RenderSection("Scripts", required: false)
 </body>
-</html>

@@ -6,12 +6,15 @@
 
 <h1 class="text-3xl font-bold mb-4">@ViewData["Title"]</h1>
 
-<div class="flex flex-col mb-4">
-    <div class="mb-2">
-        <label for="barcodeInput" class="block text-sm font-medium text-gray-700">Scan Barcode:</label>
-        <input type="text" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" id="barcodeInput" autofocus />
+<form id="scanForm">
+    @Html.AntiForgeryToken()
+    <div class="flex flex-col mb-4">
+        <div class="mb-2">
+            <label for="barcodeInput" class="block text-sm font-medium text-gray-700">Scan Barcode:</label>
+            <input type="text" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" id="barcodeInput" autofocus />
+        </div>
     </div>
-</div>
+</form>
 
 <div class="mt-4 overflow-x-auto">
     <table class="min-w-full divide-y divide-gray-200">
@@ -44,9 +47,9 @@
         <tbody class="bg-white divide-y divide-gray-200">
             @foreach (var product in Model.Products)
             {
-                <tr>
-                    <td class="px-3 py-2 whitespace-nowrap"><input type="checkbox" class="scanned-checkbox" disabled /></td>
-                    <td class="px-3 py-2 whitespace-nowrap" data-barcode="@product.id">@product.id</td>
+                <tr class="product-row" data-barcode="@product.id">
+                    <td class="px-3 py-2 whitespace-nowrap"><input type="checkbox" class="scanned-checkbox" disabled @(product.gescand ? "checked" : "") /></td>
+                    <td class="px-3 py-2 whitespace-nowrap">@product.id</td>
                     <td class="px-3 py-2 whitespace-nowrap">@product.orderno</td>
                     <td class="px-3 py-2 whitespace-nowrap">@product.verzendwijze</td>
                     <td class="px-3 py-2 whitespace-nowrap">@product.klantnaam</td>
@@ -76,30 +79,64 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('barcodeInput').addEventListener('input', function() {
-                const barcode = this.value.trim();
-                if (barcode.length > 0) {
-                    const row = document.querySelector(`[data-barcode="${barcode}"]`);
-                    if (row) {
-                        row.querySelector('.scanned-checkbox').checked = true;
-                        this.value = '';
+            const barcodeInput = document.getElementById('barcodeInput');
+            const antiForgeryToken = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            
+            // Handle barcode input
+            barcodeInput.addEventListener('keyup', function(event) {
+                if (event.key === 'Enter') {
+                    const barcode = this.value.trim();
+                    if (barcode.length > 0) {
+                        processBarcode(barcode);
                     }
                 }
             });
 
-            document.querySelector('#productsTable').addEventListener('change', function(event) {
-                if (event.target.classList.contains('scanned-checkbox')) {
-                    const barcode = event.target.closest('tr').getAttribute('data-barcode');
-                    fetch('?handler=Scan', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-                        },
-                        body: 'barcode=' + encodeURIComponent(barcode)
-                    });
+            async function processBarcode(barcode) {
+                const row = document.querySelector(`tr[data-barcode="${barcode}"]`);
+                if (row) {
+                    const checkbox = row.querySelector('.scanned-checkbox');
+                    if (!checkbox.checked) {
+                        try {
+                            const response = await fetch('?handler=Scan', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                    'X-CSRF-TOKEN': antiForgeryToken
+                                },
+                                body: 'barcode=' + encodeURIComponent(barcode)
+                            });
+
+                            if (response.ok) {
+                                const result = await response.json();
+                                if (result.success) {
+                                    checkbox.checked = true;
+                                    row.classList.add('bg-green-50');
+                                    setTimeout(() => {
+                                        row.classList.remove('bg-green-50');
+                                    }, 2000);
+                                } else {
+                                    throw new Error(result.message || 'Scan failed');
+                                }
+                            } else {
+                                throw new Error('Server returned error status');
+                            }
+                        } catch (error) {
+                            console.error('Error processing barcode:', error);
+                            row.classList.add('bg-red-50');
+                            setTimeout(() => {
+                                row.classList.remove('bg-red-50');
+                            }, 2000);
+                        }
+                    }
+                } else {
+                    console.log('Barcode not found:', barcode);
                 }
-            });
+                
+                // Clear input after processing
+                barcodeInput.value = '';
+                barcodeInput.focus();
+            }
         });
     </script>
 }
