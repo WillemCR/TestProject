@@ -31,31 +31,39 @@
 
 <script>
     function selectUser(userId) {
-        const form = document.getElementById('userForm');
-        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-        document.getElementById('selectedUserId').value = userId;
-        
-        fetch('?handler=SelectUser', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: new URLSearchParams({
-                userId: userId,
-                __RequestVerificationToken: token
-            })
+    const form = document.getElementById('userForm');
+    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+    document.getElementById('selectedUserId').value = userId;
+   
+    fetch('?handler=SelectUser', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'RequestVerificationToken': token
+        },
+        body: new URLSearchParams({
+            userId: userId,
+            __RequestVerificationToken: token
         })
-        .then(response => {
-            if (response.ok) {
-                window.location.href = '/';
-            } else {
-                console.error('Login failed');
-                alert('Login failed. Please try again.');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred. Please try again.');
-        });
-    }
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        }
+        throw new Error('Login failed');
+    })
+    .then(data => {
+        if (data.success) {
+            console.log("Login successful");
+           window.location.href = '/';
+        } else {
+            console.error('Login failed');
+            alert('Login failed. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    });
+}
 </script>

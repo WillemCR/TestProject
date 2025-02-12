@@ -4,42 +4,45 @@ using OfficeOpenXml;
 using TestProject.Data;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Identity;
+using TestProject.Models;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultScheme = "Cookies";
-    options.DefaultChallengeScheme = "Cookies";
-})
-.AddCookie("Cookies", options =>
-{
-    options.LoginPath = "/Login";
-    options.LogoutPath = "/Login?handler=Logout";
-    options.AccessDeniedPath = "/Login";
-    options.ExpireTimeSpan = TimeSpan.FromMinutes(30); // Set cookie to expire in 30 days
-    options.SlidingExpiration = true; // Optional: Reset expiration time on each request
-});
+
+
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Login";
+        options.LogoutPath = "/Login?handler=Logout";
+        options.AccessDeniedPath = "/Login";
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+        options.SlidingExpiration = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.Cookie.HttpOnly = true;
+        options.Cookie.MaxAge = TimeSpan.FromMinutes(30);
+    });
+builder.Services.AddAuthorization();
 builder.Services.AddHostedService<SeedDataService>();
 
-
-// Add services to the container.
+// Voeg services toe aan de container
 builder.Services.AddRazorPages();
 
-// Add database context
+// Voeg database context toe
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-builder.Services.AddHostedService<SeedDataService>();
 
 builder.Services.AddAntiforgery(options => {
     options.HeaderName = "X-CSRF-TOKEN";
 });
-// Add EPPlus license context
+
+// Voeg EPPlus license context toe
 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
 var app = builder.Build();
 
-// Apply pending migrations
+// Pas pending migrations toe
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -47,11 +50,10 @@ using (var scope = app.Services.CreateScope())
     context.Database.Migrate();
 }
 
-// Configure the HTTP request pipeline.
+// Configureer de HTTP request pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 

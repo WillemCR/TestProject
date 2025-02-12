@@ -5,99 +5,103 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - TestProject</title>
     <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/TestProject.styles.css" asp-append-version="true" />
     <link rel="stylesheet" href="/css/styles.css">
 </head>
-<body class="min-h-screen flex flex-col">
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">TestProject</a>
-                               
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
+<body class="min-h-screen flex flex-col bg-gray-100">
+    <header class="bg-white shadow">
+        <nav class="w-full px-4 sm:px-6 lg:px-8">
+            <div class="container mx-auto flex justify-between items-center py-4">
+                <a class="text-xl font-bold text-gray-800" asp-area="" asp-page="/Index">Suncircle LaadApp</a>
+                <ul class="flex space-x-6 items-center">
+                    <li>
+                        <a class="text-gray-800 hover:text-blue-600" asp-area="" asp-page="/Index">Home</a>
+                    </li>
+                   @if (User.IsInRole("Laadploeg") || User.IsInRole("Planner") || User.IsInRole("Admin"))
+                    {
+                        <li>
+                            <a class="text-gray-800 hover:text-blue-600" asp-area="" asp-page="/Scan">Scan Products</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
+                    }
+                   @if(User.IsInRole("Planner") || User.IsInRole("Admin"))
+                   {
+                        <li>
+                            <a class="text-gray-800 hover:text-blue-600" asp-area="" asp-page="/Import">Import</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Scan">Scan Products</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Import">Import</a>
-                        </li>
-                       <li class="nav-item">
-                            @if (User.Identity.IsAuthenticated)
-                            {
-                                <span class="nav-link text-dark content-end">
-                                    @User.Identity.Name
-                                    <form id="logoutForm" method="post" action="/Login?handler=Logout">
-                                        @Html.AntiForgeryToken()
-                                        <button type="button" onclick="handleLogout()" class="bg-blue-50">
-                                            Logout
-                                        </button>
-                                    </form>
-                                </span>
-                            }
-                            else
-                            {
-                                <a class="nav-link text-dark" asp-area="" asp-page="/Login">Login</a>
-                            }
-                        </li>
-                    </ul>
+                    }
+                    <li>
+                        @if(User.IsInRole("Admin"))
+                        {
+                            <li>
+                                <a class="text-gray-800 hover:text-blue-600" asp-area="" asp-page="/Users">Users</a>
+                            </li>
+                        }
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <div class="flex items-center space-x-4">
+                                <span class="text-gray-800">@User.Identity.Name</span>
+                                <form id="logoutForm" method="post" action="/Login?handler=Logout">
+                                    @Html.AntiForgeryToken()
+                                    <button type="button" onclick="handleLogout()" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
+                                        Logout
+                                    </button>
+                                </form>
+                            </div>
+                        }
+                        else
+                        {
+                            <a class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600" asp-area="" asp-page="/Login">Login</a>
+                        }
+                    </li>
+                </ul>
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3 flex-grow">
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow">
+        <main role="main">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-t mt-auto text-muted p-4">
-        <div class="container mx-auto">
-            &copy; 2025 - TestProject - <a asp-area="" asp-page="/Privacy">Privacy</a>
+    <footer class="bg-white border-t mt-auto py-4">
+        <div class="container mx-auto text-center text-gray-600">
+            &copy; 2025 - Suncircle
         </div>
     </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script>
+        function handleLogout() {
+            const form = document.getElementById('logoutForm');
+            const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
 
-       function handleLogout() {
-    const form = document.getElementById('logoutForm');
-    const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
+            if (!tokenInput) {
+                console.error("CSRF token not found.");
+                return;
+            }
 
-    if (!tokenInput) {
-        console.error("CSRF token not found.");
-        return;
-    }
-
-    // Ensure the RequestVerificationToken is correctly passed in the body
-    fetch('/Login?handler=LogoutHandler', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-            '__RequestVerificationToken': tokenInput.value
-        })
-    })
-    .then(response => {
-        if (response.ok) {
-            window.location.href = '/';
-        } else {
-            return response.text().then(text => { throw new Error(text); });
+            fetch('/Login?handler=LogoutHandler', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    '__RequestVerificationToken': tokenInput.value
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = '/';
+                } else {
+                    return response.text().then(text => { throw new Error(text); });
+                }
+            })
+            .catch(error => {
+                console.error('Logout request failed:', error);
+                alert('Logout failed. Please try again.');
+            });
         }
-    })
-    .catch(error => {
-        console.error('Logout request failed:', error);
-        alert('Logout failed. Please try again.');
-    });
-}
-
-</script>
-@RenderSection("Scripts", required: false)
+    </script>
+    @RenderSection("Scripts", required: false)
 </body>
+</html>

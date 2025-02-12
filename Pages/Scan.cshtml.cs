@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -8,6 +9,7 @@ using TestProject.Models;
 
 namespace TestProject.Pages
 {
+    [Authorize(Roles = "Laadploeg, Planner, Admin")]
     public class ScanModel : PageModel
     {
         private readonly ApplicationDbContext _context;
@@ -21,6 +23,11 @@ namespace TestProject.Pages
 
         public async Task<IActionResult> OnGetAsync()
         {
+            if (!User.IsInRole("Laadploeg") && !User.IsInRole("Planner") && !User.IsInRole("Admin"))
+            {
+                return Forbid();
+            }
+
             try
             {
                 Products = await _context.Products
