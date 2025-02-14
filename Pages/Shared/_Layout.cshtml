@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -14,12 +14,12 @@
                 <a class="text-xl font-bold text-gray-800" asp-area="" asp-page="/Index">Suncircle LaadApp</a>
                 <ul class="flex space-x-6 items-center">
                     <li>
-                        <a class="text-gray-800 hover:text-blue-600" asp-area="" asp-page="/Index">Home</a>
+                <a class="text-gray-800 hover:text-blue-600" asp-area="" asp-page="/Index">Startpagina</a>
                     </li>
                    @if (User.IsInRole("Laadploeg") || User.IsInRole("Planner") || User.IsInRole("Admin"))
                     {
                         <li>
-                            <a class="text-gray-800 hover:text-blue-600" asp-area="" asp-page="/Scan">Scan Products</a>
+                            <a class="text-gray-800 hover:text-blue-600" asp-area="" asp-page="/Scan">Producten Scannen</a>
                         </li>
                     }
                    @if(User.IsInRole("Planner") || User.IsInRole("Admin"))
@@ -32,7 +32,10 @@
                         @if(User.IsInRole("Admin"))
                         {
                             <li>
-                                <a class="text-gray-800 hover:text-blue-600" asp-area="" asp-page="/Users">Users</a>
+                                <a class="text-gray-800 hover:text-blue-600" asp-area="" asp-page="/Crews">Ploegen</a>
+                            </li>
+                            <li>
+                                <a class="text-gray-800 hover:text-blue-600" asp-area="" asp-page="/Users">Gebruikers</a>
                             </li>
                         }
                         @if (User.Identity.IsAuthenticated)
@@ -42,14 +45,14 @@
                                 <form id="logoutForm" method="post" action="/Login?handler=Logout">
                                     @Html.AntiForgeryToken()
                                     <button type="button" onclick="handleLogout()" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
-                                        Logout
+                                        Uitloggen
                                     </button>
                                 </form>
                             </div>
                         }
                         else
                         {
-                            <a class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600" asp-area="" asp-page="/Login">Login</a>
+                            <a class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600" asp-area="" asp-page="/Login">Inloggen</a>
                         }
                     </li>
                 </ul>

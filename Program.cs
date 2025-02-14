@@ -3,13 +3,12 @@ using Microsoft.Extensions.DependencyInjection;
 using OfficeOpenXml;
 using TestProject.Data;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Identity;
 using TestProject.Models;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
+// Add authentication services
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -23,26 +22,35 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.HttpOnly = true;
         options.Cookie.MaxAge = TimeSpan.FromMinutes(30);
     });
+
+// Add authorization services
 builder.Services.AddAuthorization();
+
+// Add hosted service for seeding data
 builder.Services.AddHostedService<SeedDataService>();
 
-// Voeg services toe aan de container
+// Add Razor Pages services
 builder.Services.AddRazorPages();
 
-// Voeg database context toe
+// Add database context
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddAntiforgery(options => {
+// Add antiforgery services
+builder.Services.AddAntiforgery(options =>
+{
     options.HeaderName = "X-CSRF-TOKEN";
 });
 
-// Voeg EPPlus license context toe
+// Set EPPlus license context
 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+// Add logging services
+builder.Services.AddLogging();
 
 var app = builder.Build();
 
-// Pas pending migrations toe
+// Apply pending migrations
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -50,7 +58,7 @@ using (var scope = app.Services.CreateScope())
     context.Database.Migrate();
 }
 
-// Configureer de HTTP request pipeline
+// Configure the HTTP request pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");

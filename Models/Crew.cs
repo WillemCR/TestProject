@@ -12,10 +12,7 @@ public class Crew
         [Required]
         public string Name { get; set; }
 
-        // Navigation property for Users
-        public virtual ICollection<User> Users { get; set; }
-
-        // Navigation property for Vehicle
-        public Vehicle Vehicle { get; set; }
+        public virtual ICollection<User>? Users { get; set; }
+        public virtual Vehicle? Vehicle { get; set; }
     }
 }
