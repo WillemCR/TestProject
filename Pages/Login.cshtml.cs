@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Authentication;
 using TestProject.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
-
+using BCrypt.Net;
 namespace TestProject.Pages
 {
     public class LoginModel : PageModel
@@ -72,14 +72,21 @@ namespace TestProject.Pages
         /// Handles user selection for login
         /// </summary>
         /// <param name="userId">The ID of the user to sign in as</param>
+        /// <param name="password">The password for the user</param>
         /// <returns>A JSON result indicating success or failure</returns>
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> OnPostSelectUserAsync([FromForm] int userId)
+        public async Task<IActionResult> OnPostSelectUserAsync([FromForm] int userId, [FromForm] string password)
         {
             var user = await _context.Users.FindAsync(userId);
             if (user == null)
             {
                 return BadRequest("User not found");
+            }
+
+            // Simple password comparison - replace with proper hashing in production!
+            if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))  // Note: This is NOT secure for production!
+            {
+                return new JsonResult(new { success = false });
             }
 
             await SignInUser(user);

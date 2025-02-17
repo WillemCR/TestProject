@@ -11,12 +11,12 @@
     <form method="post" id="userForm">
         @Html.AntiForgeryToken()
         <input type="hidden" id="selectedUserId" name="userId" />
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4">
             @foreach (var user in Model.Users)
             {
                 <div class="col-span-1">
                     <div class="bg-gray-100 shadow-md rounded-lg p-4 cursor-pointer hover:bg-gray-200 transition-colors" 
-                         onclick="selectUser(@user.Id)">
+                         onclick="showPasswordDialog('@user.Id', '@user.Name')">
                         <div class="card-body text-center flex flex-col justify-between h-full">
                             <div>
                                 <h3 class="text-2xl font-semibold mb-2">@user.Name</h3>
@@ -29,41 +29,73 @@
     </form>
 </div>
 
+<!-- Password Modal -->
+<div id="passwordModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center">
+    <div class="bg-white p-6 rounded-lg shadow-xl">
+        <h3 class="text-xl font-semibold mb-4">Voer Wachtwoord in</h3>
+        <p id="selectedUserName" class="mb-4"></p>
+        <input type="password" id="passwordInput" class="w-full p-2 border rounded mb-4" placeholder="Voer Wachtwoord in." onkeyup="handleEnterKey(event)">
+        <div class="flex justify-end gap-2">
+            <button onclick="closePasswordDialog()" class="px-4 py-2 bg-gray-200 rounded">Annuleren</button>
+            <button onclick="submitPassword()" class="px-4 py-2 bg-blue-500 text-white rounded">Login</button>
+        </div>
+    </div>
+</div>
+
 <script>
-    function selectUser(userId) {
-    const form = document.getElementById('userForm');
-    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-    document.getElementById('selectedUserId').value = userId;
-   
-    fetch('?handler=SelectUser', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'RequestVerificationToken': token
-        },
-        body: new URLSearchParams({
-            userId: userId,
-            __RequestVerificationToken: token
+    let currentUserId = null;
+
+    function showPasswordDialog(userId, userName) {
+        currentUserId = userId;
+        document.getElementById('selectedUserName').textContent = `Log in als: ${userName}`;
+        document.getElementById('passwordModal').classList.remove('hidden');
+        document.getElementById('passwordInput').value = '';
+        document.getElementById('passwordInput').focus();
+    }
+
+    function closePasswordDialog() {
+        document.getElementById('passwordModal').classList.add('hidden');
+        currentUserId = null;
+    }
+
+    function submitPassword() {
+        const password = document.getElementById('passwordInput').value;
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        
+        fetch('?handler=SelectUser', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'RequestVerificationToken': token
+            },
+            body: new URLSearchParams({
+                userId: currentUserId,
+                password: password,
+                __RequestVerificationToken: token
+            })
         })
-    })
-    .then(response => {
-        if (response.ok) {
-            return response.json();
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Login gefaald');
+        })
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/';
+            } else {
+                alert('Wachtwoord is incorrect');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Er is een fout opgetreden. Probeer het opnieuw.');
+        });
+    }
+
+    function handleEnterKey(event) {
+        if (event.key === 'Enter') {
+            submitPassword();
         }
-        throw new Error('Login failed');
-    })
-    .then(data => {
-        if (data.success) {
-            console.log("Login successful");
-           window.location.href = '/';
-        } else {
-            console.error('Login failed');
-            alert('Login failed. Please try again.');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
-    });
-}
+    }
 </script>

@@ -36,10 +36,7 @@ namespace TestProject.Pages.Shared
             {
                 ModelState.AddModelError("User.Name", "Name is required");
             }
-            if (string.IsNullOrWhiteSpace(User.Email))
-            {
-                ModelState.AddModelError("User.Email", "Email is required");
-            }
+           
 
             if (!ModelState.IsValid)
             {

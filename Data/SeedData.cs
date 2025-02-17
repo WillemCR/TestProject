@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
+using BCrypt.Net;
 using Microsoft.EntityFrameworkCore;
 using TestProject.Models;
-
+using BCrypt.Net;
 namespace TestProject.Data
 {
     public static class SeedData
@@ -37,70 +38,80 @@ namespace TestProject.Data
                     Name = "Willem",
                     LastLoggedIn = DateTime.Now,
                     Role = UserRole.Admin, // Willem is explicitly set to Admin
-                    CrewId = defaultCrew.CrewId // Assign to the default crew
+                    CrewId = defaultCrew.CrewId, // Assign to the default crew
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("password")
                 },
                 new User
                 {
                     Name = "John Doe",
                     LastLoggedIn = DateTime.Now.AddDays(-1),
                     Role = roles[new Random().Next(roles.Length)], // Random role
-                    CrewId = defaultCrew.CrewId
+                    CrewId = defaultCrew.CrewId,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("password")
                 },
                 new User
                 {
                     Name = "Jane Smith",
                     LastLoggedIn = DateTime.Now.AddDays(-2),
                     Role = roles[new Random().Next(roles.Length)],
-                    CrewId = defaultCrew.CrewId
+                    CrewId = defaultCrew.CrewId,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("password")
                 },
                 new User
                 {
                     Name = "Bob Johnson",
                     LastLoggedIn = DateTime.Now.AddDays(-3),
                     Role = roles[new Random().Next(roles.Length)],
-                    CrewId = defaultCrew.CrewId
+                    CrewId = defaultCrew.CrewId,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("password")
                 },
                 new User
                 {
                     Name = "Alice Brown",
                     LastLoggedIn = DateTime.Now.AddDays(-4),
                     Role = roles[new Random().Next(roles.Length)],
-                    CrewId = defaultCrew.CrewId
+                    CrewId = defaultCrew.CrewId,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("password")
                 },
                 new User
                 {
                     Name = "Charlie Wilson",
                     LastLoggedIn = DateTime.Now.AddDays(-5),
                     Role = roles[new Random().Next(roles.Length)],
-                    CrewId = defaultCrew.CrewId
+                    CrewId = defaultCrew.CrewId,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("password")
                 },
                 new User
                 {
                     Name = "Diana Miller",
                     LastLoggedIn = DateTime.Now.AddDays(-6),
                     Role = roles[new Random().Next(roles.Length)],
-                    CrewId = defaultCrew.CrewId
+                    CrewId = defaultCrew.CrewId,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("password")
                 },
                 new User
                 {
                     Name = "Edward Davis",
                     LastLoggedIn = DateTime.Now.AddDays(-7),
                     Role = roles[new Random().Next(roles.Length)],
-                    CrewId = defaultCrew.CrewId
+                    CrewId = defaultCrew.CrewId,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("password")
                 },
                 new User
                 {
                     Name = "Fiona Clark",
                     LastLoggedIn = DateTime.Now.AddDays(-8),
                     Role = roles[new Random().Next(roles.Length)],
-                    CrewId = defaultCrew.CrewId
+                    CrewId = defaultCrew.CrewId,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("password")
                 },
                 new User
                 {
                     Name = "George White",
                     LastLoggedIn = DateTime.Now.AddDays(-9),
                     Role = roles[new Random().Next(roles.Length)],
-                    CrewId = defaultCrew.CrewId
+                    CrewId = defaultCrew.CrewId,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("password")
                 }
             };
 
