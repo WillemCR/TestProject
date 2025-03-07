@@ -6,7 +6,20 @@
 
 <h1 class="text-3xl font-bold mb-4">@ViewData["Title"]</h1>
 
-<form id="scanForm">
+<div class="mb-4">
+    <label for="vehicleSelect" class="block text-sm font-medium text-gray-700">Selecteer Voertuig:</label>
+    <select id="vehicleSelect" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+        @foreach (var vehicle in Model.UniqueVehicles)
+        {
+            if (vehicle != null)
+            {
+                <option value="@vehicle" selected="@(vehicle == Model.SelectedVehicle)">@vehicle</option>
+            }
+        }
+    </select>
+</div>
+
+<form id="scanForm" onsubmit="return false;">
     @Html.AntiForgeryToken()
     <div class="flex flex-col mb-4">
         <div class="mb-2">
@@ -16,127 +29,177 @@
     </div>
 </form>
 
-<div class="mt-4 overflow-x-auto">
-    <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-            <tr>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gescand</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order No</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Verzendwijze</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Klantnaam</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Klantnummer</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orderregelnummer</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Datum</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gefactureerd</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Opgehaald</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Losartikel</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Handtekening</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bron</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artikelomschrijving</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lengte</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Colli</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aantal</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Referentie</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voertuig</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Adres</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Volgorde</th>
-            </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-            @foreach (var product in Model.Products)
+<div class="mt-4" id="productsContainer">
+    @if (Model.SelectedVehicle != null)
+    {
+        @if (Model.HeavyProducts.Any())
+        {
+        <!-- Heavy Products Section -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Zware producten</h2>
+            @foreach (var group in Model.HeavyProducts.GroupBy(p => p.klantnaam))
             {
-                <tr class="product-row" data-barcode="@product.id">
-                    <td class="px-3 py-2 whitespace-nowrap"><input type="checkbox" class="scanned-checkbox" disabled @(product.gescand ? "checked" : "") /></td>
-                    <td class="px-3 py-2 whitespace-nowrap">@product.id</td>
-                    <td class="px-3 py-2 whitespace-nowrap">@product.orderno</td>
-                    <td class="px-3 py-2 whitespace-nowrap">@product.verzendwijze</td>
-                    <td class="px-3 py-2 whitespace-nowrap">@product.klantnaam</td>
-                    <td class="px-3 py-2 whitespace-nowrap">@product.klantnummer</td>
-                    <td class="px-3 py-2 whitespace-nowrap">@product.status</td>
-                    <td class="px-3 py-2 whitespace-nowrap">@product.orderregelnummer</td>
-                    <td class="px-3 py-2 whitespace-nowrap">@product.datum</td>
-                    <td class="px-3 py-2 whitespace-nowrap">@product.gefactureerd</td>
-                    <td class="px-3 py-2 whitespace-nowrap">@product.opgehaald</td>
-                    <td class="px-3 py-2 whitespace-nowrap">@product.losartikel</td>
-                    <td class="px-3 py-2 whitespace-nowrap">@product.handtekening</td>
-                    <td class="px-3 py-2 whitespace-nowrap">@product.bron</td>
-                    <td class="px-3 py-2 whitespace-nowrap">@product.artikelomschrijving</td>
-                    <td class="px-3 py-2 whitespace-nowrap">@product.lengte</td>
-                    <td class="px-3 py-2 whitespace-nowrap">@product.colli</td>
-                    <td class="px-3 py-2 whitespace-nowrap">@product.aantal</td>
-                    <td class="px-3 py-2 whitespace-nowrap">@product.referentie</td>
-                    <td class="px-3 py-2 whitespace-nowrap">@product.voertuig</td>
-                    <td class="px-3 py-2 whitespace-nowrap">@product.adres</td>
-                    <td class="px-3 py-2 whitespace-nowrap">@product.volgorde</td>
-                </tr>
+                <div class="mb-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">@group.Key</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <!-- Same table headers as before -->
+                                <tr>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gescand</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orderregelnummer</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artikelomschrijving</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Colli</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aantal</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Volgorde</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @foreach (var product in group)
+                                {
+                                    <tr class="product-row" data-barcode="@product.orderregelnummer">
+                                        <td class="px-3 py-2 whitespace-nowrap"><input type="checkbox" class="scanned-checkbox" disabled @(product.gescand ? "checked" : "") /></td>
+                                        <td class="px-3 py-2 whitespace-nowrap">@product.id</td>
+                                        <td class="px-3 py-2 whitespace-nowrap">@product.orderregelnummer</td>
+                                        <td class="px-3 py-2 whitespace-nowrap">@product.artikelomschrijving</td>
+                                        <td class="px-3 py-2 whitespace-nowrap">@product.colli</td>
+                                        <td class="px-3 py-2 whitespace-nowrap aantal-cell">@product.aantal</td>
+                                        <td class="px-3 py-2 whitespace-nowrap">@product.volgorde</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             }
-        </tbody>
-    </table>
+        </div>
+        }
+        <!-- Regular Products Section -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Gewone producten</h2>
+            @foreach (var group in Model.RegularProducts.GroupBy(p => p.klantnaam))
+            {
+                <div class="mb-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">@group.Key</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <!-- Same table headers as before -->
+                                <tr>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gescand</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orderregelnummer</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artikelomschrijving</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Colli</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aantal</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Volgorde</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @foreach (var product in group)
+                                {
+                                    <tr class="product-row" data-barcode="@product.orderregelnummer">
+                                        <td class="px-3 py-2 whitespace-nowrap"><input type="checkbox" class="scanned-checkbox" disabled @(product.gescand ? "checked" : "") /></td>
+                                        <td class="px-3 py-2 whitespace-nowrap">@product.id</td>
+                                        <td class="px-3 py-2 whitespace-nowrap">@product.orderregelnummer</td>
+                                        <td class="px-3 py-2 whitespace-nowrap">@product.artikelomschrijving</td>
+                                        <td class="px-3 py-2 whitespace-nowrap">@product.colli</td>
+                                        <td class="px-3 py-2 whitespace-nowrap aantal-cell">@product.aantal</td>
+                                        <td class="px-3 py-2 whitespace-nowrap">@product.volgorde</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        </div>
+    }
 </div>
 
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const barcodeInput = document.getElementById('barcodeInput');
-            const antiForgeryToken = document.querySelector('input[name="__RequestVerificationToken"]').value;
-            
-            // Handle barcode input
-            barcodeInput.addEventListener('keyup', function(event) {
-                if (event.key === 'Enter') {
-                    const barcode = this.value.trim();
-                    if (barcode.length > 0) {
-                        processBarcode(barcode);
-                    }
-                }
-            });
+    document.addEventListener('DOMContentLoaded', function() {
+        const barcodeInput = document.getElementById('barcodeInput');
+        const vehicleSelect = document.getElementById('vehicleSelect');
 
-            async function processBarcode(barcode) {
-                const row = document.querySelector(`tr[data-barcode="${barcode}"]`);
-                if (row) {
-                    const checkbox = row.querySelector('.scanned-checkbox');
-                    if (!checkbox.checked) {
-                        try {
-                            const response = await fetch('?handler=Scan', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/x-www-form-urlencoded',
-                                    'X-CSRF-TOKEN': antiForgeryToken
-                                },
-                                body: 'barcode=' + encodeURIComponent(barcode)
-                            });
-
-                            if (response.ok) {
-                                const result = await response.json();
-                                if (result.success) {
-                                    checkbox.checked = true;
-                                    row.classList.add('bg-green-50');
-                                    setTimeout(() => {
-                                        row.classList.remove('bg-green-50');
-                                    }, 2000);
-                                } else {
-                                    throw new Error(result.message || 'Scan failed');
-                                }
-                            } else {
-                                throw new Error('Server returned error status');
-                            }
-                        } catch (error) {
-                            console.error('Error processing barcode:', error);
-                            row.classList.add('bg-red-50');
-                            setTimeout(() => {
-                                row.classList.remove('bg-red-50');
-                            }, 2000);
-                        }
-                    }
-                } else {
-                    console.log('Barcode not found:', barcode);
-                }
-                
-                // Clear input after processing
-                barcodeInput.value = '';
-                barcodeInput.focus();
+        // Handle vehicle selection
+        vehicleSelect.addEventListener('change', function() {
+            const selectedVehicle = this.value;
+            if (selectedVehicle) {
+                window.location.href = `/Scan?vehicle=${encodeURIComponent(selectedVehicle)}`;
+            } else {
+                window.location.href = '/Scan';
             }
         });
+
+        // Handle barcode input
+        barcodeInput.addEventListener('keyup', async function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const barcode = this.value.trim();
+                
+                if (barcode.length > 0) {
+                    try {
+                        const response = await fetch('/api/ScanApi/ProcessBarcode', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ barcode: barcode })
+                        });
+
+                        const responseText = await response.text();
+
+                        if (!response.ok) {
+                            throw new Error(`API returned ${response.status}: ${responseText || 'No error message'}`);
+                        }
+
+                        const result = JSON.parse(responseText);
+
+                        if (result.success) {
+                            const row = document.querySelector(`tr[data-barcode="${barcode}"]`);
+                            if (row) {
+                                const checkbox = row.querySelector('.scanned-checkbox');
+                                const aantalCell = row.querySelector('.aantal-cell');
+                                // Update the aantal display
+                                if (aantalCell) {
+                                    aantalCell.textContent = result.aantal;
+                                }
+
+                                if (result.isComplete) {
+                                    // Turn green and check the box when complete
+                                    checkbox.checked = true;
+                                    row.classList.add('bg-green-300');
+                                    setTimeout(() => row.classList.remove('bg-green-300'), 2000);
+                                } else {
+                                    // Turn yellow when not yet complete
+                                    row.classList.add('bg-yellow-300');
+                                    setTimeout(() => row.classList.remove('bg-yellow-300'), 2000);
+                                }
+                            
+                            } else {
+                                console.warn('Barcode niet gevonden:', barcode);
+                            }
+                        } else {
+                            throw new Error(result.message || 'API Fout');
+                        }
+                    } catch (error) {
+                        console.error('Error details:', error);
+                        const row = document.querySelector(`tr[data-barcode="${barcode}"]`);
+                        if (row) {
+                            row.classList.add('bg-red-50');
+                            setTimeout(() => row.classList.remove('bg-red-50'), 2000);
+                        }
+                        console.log(`Scan gefaald: ${error.message}`);
+                    }
+
+                    this.value = '';
+                    this.focus();
+                }
+            }
+        });
+    });
     </script>
 }

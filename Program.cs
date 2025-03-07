@@ -23,7 +23,6 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.MaxAge = TimeSpan.FromMinutes(30);
     });
 
-
 // Add authorization services
 builder.Services.AddAuthorization();
 
@@ -32,6 +31,9 @@ builder.Services.AddHostedService<SeedDataService>();
 
 // Add Razor Pages services
 builder.Services.AddRazorPages();
+
+// Add Controllers support
+builder.Services.AddControllers();
 
 // Add database context
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -60,7 +62,11 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage(); // Add this to see detailed error pages in development
+}
+else
 {
     app.UseExceptionHandler("/Error");
     app.UseHsts();
@@ -71,7 +77,13 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers(); // Registers API controllers
+});
 
+// Map both Razor Pages and Controllers (new line)
+app.MapControllers();
 app.MapRazorPages();
 
 app.Run();

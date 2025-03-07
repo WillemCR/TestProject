@@ -26,7 +26,7 @@
             </div>
 
             <div>
-                <label for="role" class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                <label for="role" class="block text-sm font-medium text-gray-700 mb-2">Rol</label>
                 <select id="role" asp-for="User.Role" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     <option value="">Selecteer Rol</option>
                     @foreach (var role in Model.Roles)
@@ -37,24 +37,13 @@
                 <span asp-validation-for="User.Role" class="text-red-600 text-sm"></span>
             </div>
 
-            <div>
-                <label for="crew" class="block text-sm font-medium text-gray-700 mb-2">Crew</label>
-                <select id="crew" asp-for="User.CrewId" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    <option value="">Selecteer Ploeg</option>
-                    @foreach (var crew in Model.Crews)
-                    {
-                        <option value="@crew.Value">@crew.Text</option>
-                    }
-                </select>
-                <span asp-validation-for="User.CrewId" class="text-red-600 text-sm"></span>
-            </div>
-
+            
             <div class="flex justify-end space-x-4 mt-8">
                 <a asp-page="/Users" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
-                    Back to Users
+                    Terug naar gebruikers
                 </a>
                 <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                    Save
+                    Opslaan
                 </button>
             </div>
         </form>

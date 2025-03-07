@@ -21,7 +21,6 @@ namespace TestProject.Pages.Shared
         [BindProperty] 
         public User User { get; set; } = new User();
 
-        public IEnumerable<SelectListItem> Crews { get; set; }
         public IEnumerable<SelectListItem> Roles { get; set; }
 
         public async Task OnGetAsync(int id = 0)
@@ -87,13 +86,6 @@ namespace TestProject.Pages.Shared
             }
             Roles = roles;
             
-            Crews = await _context.Crews
-                .Select(c => new SelectListItem 
-                { 
-                    Value = c.CrewId.ToString(), 
-                    Text = c.Name 
-                })
-                .ToListAsync();
-        }
+           }
     }
 }

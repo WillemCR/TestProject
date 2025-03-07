@@ -10,13 +10,17 @@ public class Vehicle
     [Required]
     public string Name { get; set; }
 
+    [Required]
+    [Range(0.1, 200)]
     public decimal? Length { get; set; }
+
+    [Required]
+    [Range(0.1, 200)]
     public decimal? Height { get; set; }
+
+    [Required]
+    [Range(0.1, 200)]
     public decimal? Width { get; set; }
 
-    // Foreign key for Crew
-    public int? CrewId { get; set; }
-
-    // Navigation property for Crew
-    public Crew Crew { get; set; }
+  
 }

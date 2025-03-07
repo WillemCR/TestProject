@@ -27,13 +27,16 @@
                         <li>
                             <a class="text-gray-800 hover:text-blue-600" asp-area="" asp-page="/Import">Import</a>
                         </li>
+                        <li>
+                            <a class="text-gray-800 hover:text-blue-600" asp-area="" asp-page="/Vehicle">Voertuigen</a>
+                        </li>
+                        <li>
+                            <a class="text-gray-800 hover:text-blue-600" asp-area="" asp-page="/HeavyProducts">Zware Producten</a>
+                        </li>
                     }
                     <li>
                         @if(User.IsInRole("Admin"))
                         {
-                            <li>
-                                <a class="text-gray-800 hover:text-blue-600" asp-area="" asp-page="/Crews">Ploegen</a>
-                            </li>
                             <li>
                                 <a class="text-gray-800 hover:text-blue-600" asp-area="" asp-page="/Users">Gebruikers</a>
                             </li>

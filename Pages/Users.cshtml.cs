@@ -25,7 +25,6 @@ namespace TestProject.Pages
         public async Task OnGetAsync()
         {
             Users = await _context.Users
-                .Include(u => u.Crew)
                 .OrderBy(u => u.Name)
                 .ToListAsync();
         }

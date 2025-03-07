@@ -1,0 +1,50 @@
+@page
+@model VehicleCreateModel
+@{
+    ViewData["Title"] = "Voertuig Toevoegen";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto p-4">
+    <form method="post" class="lg:col-span-2">
+        @Html.AntiForgeryToken()
+        <div class="p-4">
+            <label asp-for="Vehicle.Name" class="block text-sm font-medium text-gray-700 mb-1"></label>
+            <input asp-for="Vehicle.Name" class="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full" />
+            <span asp-validation-for="Vehicle.Name" class="text-red-500 text-sm"></span>
+        </div>
+
+        <div class="p-4">
+            <label asp-for="Vehicle.Length" class="block text-sm font-medium text-gray-700 mb-1"></label>
+            <input asp-for="Vehicle.Length" class="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full" />
+            <span asp-validation-for="Vehicle.Length" class="text-red-500 text-sm"></span>
+        </div>
+
+        <div class="p-4">
+            <label asp-for="Vehicle.Height" class="block text-sm font-medium text-gray-700 mb-1"></label>
+            <input asp-for="Vehicle.Height" class="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full" />
+            <span asp-validation-for="Vehicle.Height" class="text-red-500 text-sm"></span>
+        </div>
+
+        <div class="p-4">
+            <label asp-for="Vehicle.Width" class="block text-sm font-medium text-gray-700 mb-1"></label>
+            <input asp-for="Vehicle.Width" class="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full" />
+            <span asp-validation-for="Vehicle.Width" class="text-red-500 text-sm"></span>
+        </div>
+
+        
+        <div class="p-4 mt-4">
+            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Opslaan
+            </button>
+            <a asp-page="/Index" class="text-blue-500 hover:text-blue-700 ml-2">
+                Terug naar overzicht
+            </a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

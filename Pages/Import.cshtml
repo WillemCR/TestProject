@@ -4,21 +4,32 @@
     ViewData["Title"] = "Import Products";
 }
 
-<div class="container">
-    <h1>Import Products</h1>
+<div class="max-w-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-6">Import Products</h1>
     
     <!-- Form for importing Excel file -->
-    <form method="post" enctype="multipart/form-data">
-        <div class="form-group">
-            <label for="file">Select Excel File</label>
-            <input type="file" class="form-control-file" name="file" id="file" accept=".xlsx" required>
+    <form method="post" enctype="multipart/form-data" class="bg-white shadow-md rounded-lg p-6 mb-6">
+        <div class="mb-4">
+            <label for="file" class="block text-sm font-medium text-gray-700 mb-2">Selecteer Excel bestand</label>
+            <input type="file" 
+                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" 
+                   name="file" 
+                   id="file" 
+                   accept=".xlsx" 
+                   required>
         </div>
-        <button type="submit" class="btn btn-primary">Import</button>
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out">
+            Importeer
+        </button>
     </form>
 
     <!-- Form for flushing the Products table -->
-    <form method="post" class="mt-3">
-        <button type="submit" asp-page-handler="FlushProducts" class="btn btn-danger">Flush Products Table</button>
+    <form method="post" class="mb-6">
+        <button type="submit" 
+                asp-page-handler="FlushProducts" 
+                class="w-full bg-red-600 hover:bg-red-700 font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out">
+           Leeg producten tabel
+        </button>
     </form>
 
     <!-- Display import status messages -->
@@ -27,13 +38,13 @@
         <div class="mt-3">
             @if (Model.ImportStatus.Success)
             {
-                <div class="alert alert-success">
+                <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-md">
                     @Model.ImportStatus.Message
                 </div>
             }
             else
             {
-                <div class="alert alert-danger">
+                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md">
                     @Model.ImportStatus.Message
                 </div>
             }

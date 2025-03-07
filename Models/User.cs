@@ -12,8 +12,6 @@ namespace TestProject.Models
         [Required]
         public UserRole Role { get; set; }
         
-        public int? CrewId { get; set; }
-        public virtual Crew? Crew { get; set; }
     }
 
     public enum UserRole
