@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading;
+using Microsoft.AspNetCore.Identity;
 using System.Threading.Tasks;
+using TestProject.Models;
 
 namespace TestProject.Data
 {
@@ -14,16 +16,17 @@ namespace TestProject.Data
             _serviceProvider = serviceProvider;
         }
 
-        public Task StartAsync(CancellationToken cancellationToken)
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
             using (var scope = _serviceProvider.CreateScope())
             {
                 var scopedServices = scope.ServiceProvider;
                 var dbContext = scopedServices.GetRequiredService<ApplicationDbContext>();
-                dbContext.SeedUsers();
-            }
+                var userManager = scopedServices.GetRequiredService<UserManager<User>>();
+                await SeedData.SeedUsersAsync(dbContext, userManager);
 
-            return Task.CompletedTask;
+           
+            }
         }
 
         public Task StopAsync(CancellationToken cancellationToken)

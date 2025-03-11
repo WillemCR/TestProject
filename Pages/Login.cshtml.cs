@@ -83,8 +83,7 @@ namespace TestProject.Pages
                 return BadRequest("User not found");
             }
 
-            // Simple password comparison - replace with proper hashing in production!
-            if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))  // Note: This is NOT secure for production!
+                if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))  
             {
                 return new JsonResult(new { success = false });
             }

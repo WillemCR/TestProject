@@ -2,9 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using OfficeOpenXml;
 using TestProject.Data;
+using TestProject.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using TestProject.Models;
 using Microsoft.AspNetCore.Identity;
+using System.Net.Mail;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,9 +38,23 @@ builder.Services.AddRazorPages();
 // Add Controllers support
 builder.Services.AddControllers();
 
+builder.Services.AddTransient<IEmailSender, EmailSender>();
+
 // Add database context
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Add Identity services
+builder.Services.AddIdentityCore<User>(options => {
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequiredLength = 6;
+    options.Password.RequiredUniqueChars = 1;
+})
+.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddDefaultTokenProviders();
 
 // Add antiforgery services
 builder.Services.AddAntiforgery(options =>
@@ -77,13 +94,10 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+app.MapRazorPages();
+app.MapControllers();
 app.UseEndpoints(endpoints =>
 {
-    endpoints.MapControllers(); // Registers API controllers
 });
-
-// Map both Razor Pages and Controllers (new line)
-app.MapControllers();
-app.MapRazorPages();
 
 app.Run();
