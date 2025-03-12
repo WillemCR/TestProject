@@ -15,6 +15,7 @@ namespace TestProject.Data
     public DbSet<Product> Products { get; set; }
     public DbSet<Vehicle> Vehicles { get; set; }
     public DbSet<HeavyProduct> HeavyProducts { get; set; }
+    public DbSet<MissingProductReportEntity> MissingProductReports { get; set; }
    
 }
 }

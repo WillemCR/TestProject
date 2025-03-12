@@ -17,18 +17,20 @@ namespace TestProject.Data
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
-        {
-            using (var scope = _serviceProvider.CreateScope())
-            {
-                var scopedServices = scope.ServiceProvider;
-                var dbContext = scopedServices.GetRequiredService<ApplicationDbContext>();
-                var userManager = scopedServices.GetRequiredService<UserManager<User>>();
-                await SeedData.SeedUsersAsync(dbContext, userManager);
-
-           
-            }
-        }
-
+{
+    using (var scope = _serviceProvider.CreateScope())
+    {
+        var scopedServices = scope.ServiceProvider;
+        var dbContext = scopedServices.GetRequiredService<ApplicationDbContext>();
+        var userManager = scopedServices.GetRequiredService<UserManager<User>>();
+        
+        // Seed HeavyProducts
+        SeedData.Initialize(dbContext);
+        
+        // Seed Users
+        await dbContext.SeedUsersAsync(userManager);
+    }
+}
         public Task StopAsync(CancellationToken cancellationToken)
         {
             return Task.CompletedTask;

@@ -25,7 +25,7 @@ namespace TestProject.Pages
         public async Task OnGetAsync()
         {
             Users = await _context.Users
-                .OrderBy(u => u.Name)
+                .OrderBy(u => u.UserName)
                 .ToListAsync();
         }
 

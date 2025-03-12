@@ -3,21 +3,25 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Identity;
 using System.Threading.Tasks;
 using TestProject.Models;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
 using TestProject.Data;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using BCrypt.Net;
+
 namespace TestProject.Pages
 {
     public class LoginModel : PageModel
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<User> _userManager;
+        private readonly SignInManager<User> _signInManager;
 
-        public LoginModel(ApplicationDbContext context)
+        public LoginModel(
+            ApplicationDbContext context,
+            UserManager<User> userManager,
+            SignInManager<User> signInManager)
         {
             _context = context;
+            _userManager = userManager;
+            _signInManager = signInManager;
         }
 
         public IList<User> Users { get; set; } = new List<User>();
@@ -33,6 +37,9 @@ namespace TestProject.Pages
         [BindProperty]
         public string Name { get; set; }
 
+        [BindProperty]
+        public string Password { get; set; }
+
         /// <summary>
         /// Handles the login form submission
         /// </summary>
@@ -45,14 +52,19 @@ namespace TestProject.Pages
                 return Page();
             }
 
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Name == Name);
+            var user = await _userManager.FindByNameAsync(Name);
             if (user == null)
             {
                 ModelState.AddModelError("", "Invalid username");
                 return Page();
             }
 
-            await SignInUser(user);
+            var result = await _signInManager.PasswordSignInAsync(user, Password, isPersistent: true, lockoutOnFailure: false);
+            if (!result.Succeeded)
+            {
+                ModelState.AddModelError("", "Invalid login attempt");
+                return Page();
+            }
 
             return RedirectToPage("/Index");
         }
@@ -64,7 +76,7 @@ namespace TestProject.Pages
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> OnPostLogoutHandlerAsync()
         {
-            await HttpContext.SignOutAsync("Cookies");
+            await _signInManager.SignOutAsync();
             return new JsonResult(new { success = true });
         }
 
@@ -77,47 +89,20 @@ namespace TestProject.Pages
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> OnPostSelectUserAsync([FromForm] int userId, [FromForm] string password)
         {
-            var user = await _context.Users.FindAsync(userId);
+            var user = await _userManager.FindByIdAsync(userId.ToString());
             if (user == null)
             {
                 return BadRequest("User not found");
             }
 
-                if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))  
+            var result = 
+            await _signInManager.PasswordSignInAsync(user, password, isPersistent: true, lockoutOnFailure: false);
+            if (!result.Succeeded)
             {
                 return new JsonResult(new { success = false });
             }
 
-            await SignInUser(user);
             return new JsonResult(new { success = true });
-        }
-
-        /// <summary>
-        /// Signs in the specified user using claims-based authentication
-        /// </summary>
-        /// <param name="user">The user to authenticate</param>
-        
-        private async Task SignInUser(User user)
-        {
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, user.Name),
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Role, user.Role.ToString())
-            };
-
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
-
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                principal,
-                new AuthenticationProperties
-                {
-                    IsPersistent = true,
-                    ExpiresUtc = DateTime.UtcNow.AddMinutes(30)
-                }
-            );
         }
     }
 }

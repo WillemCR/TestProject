@@ -74,7 +74,7 @@ public class UserFormModel : PageModel
             var existingUser = await _context.Users.FindAsync(User.Id);
             if (existingUser != null)
             {
-                existingUser.Name = User.Name;
+                existingUser.UserName = User.UserName;
                 existingUser.Email = User.Email;
                 existingUser.Role = User.Role;
                 existingUser.PasswordHash = existingUser.PasswordHash; // Preserve existing password hash

@@ -47,28 +47,32 @@
                                 <!-- Same table headers as before -->
                                 <tr>
                                     <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gescand</th>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gemeld</th>
                                     <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orderregelnummer</th>
                                     <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artikelomschrijving</th>
                                     <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Colli</th>
                                     <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aantal</th>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Volgorde</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach (var product in group)
-                                {
-                                    <tr class="product-row" data-barcode="@product.orderregelnummer">
-                                        <td class="px-3 py-2 whitespace-nowrap"><input type="checkbox" class="scanned-checkbox" disabled @(product.gescand ? "checked" : "") /></td>
-                                        <td class="px-3 py-2 whitespace-nowrap">@product.id</td>
-                                        <td class="px-3 py-2 whitespace-nowrap">@product.orderregelnummer</td>
-                                        <td class="px-3 py-2 whitespace-nowrap">@product.artikelomschrijving</td>
-                                        <td class="px-3 py-2 whitespace-nowrap">@product.colli</td>
-                                        <td class="px-3 py-2 whitespace-nowrap aantal-cell">@product.aantal</td>
-                                        <td class="px-3 py-2 whitespace-nowrap">@product.volgorde</td>
-                                    </tr>
-                                }
-                            </tbody>
+    @foreach (var product in group)
+    {
+        <tr class="product-row" data-barcode="@product.orderregelnummer">
+            <td class="px-3 py-2 whitespace-nowrap"><input type="checkbox" class="scanned-checkbox" disabled @(product.gescand ? "checked" : "") /></td>
+            <td class="px-3 py-2 whitespace-nowrap"><input type="checkbox" class="gemeld-checkbox" disabled @(product.gemeld ? "checked" : "") /></td>
+            <td class="px-3 py-2 whitespace-nowrap">@product.orderregelnummer</td>
+            <td class="px-3 py-2 whitespace-nowrap">@product.artikelomschrijving</td>
+            <td class="px-3 py-2 whitespace-nowrap">@product.colli</td>
+            <td class="px-3 py-2 whitespace-nowrap aantal-cell">@product.aantal</td>
+            <!-- Add a "Report Missing" button -->
+            <td class="px-3 py-2 whitespace-nowrap">
+                <button type="button" class="px-2 py-1 text-sm text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 rounded-md" onclick="showMissingProductModal('@product.orderregelnummer')">
+    Melden
+</button>
+            </td>
+        </tr>
+    }
+</tbody>
                         </table>
                     </div>
                 </div>
@@ -88,27 +92,31 @@
                                 <!-- Same table headers as before -->
                                 <tr>
                                     <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gescand</th>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gemeld</th>
                                     <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orderregelnummer</th>
                                     <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artikelomschrijving</th>
                                     <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Colli</th>
                                     <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aantal</th>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Volgorde</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach (var product in group)
-                                {
-                                    <tr class="product-row" data-barcode="@product.orderregelnummer">
-                                        <td class="px-3 py-2 whitespace-nowrap"><input type="checkbox" class="scanned-checkbox" disabled @(product.gescand ? "checked" : "") /></td>
-                                        <td class="px-3 py-2 whitespace-nowrap">@product.id</td>
-                                        <td class="px-3 py-2 whitespace-nowrap">@product.orderregelnummer</td>
-                                        <td class="px-3 py-2 whitespace-nowrap">@product.artikelomschrijving</td>
-                                        <td class="px-3 py-2 whitespace-nowrap">@product.colli</td>
-                                        <td class="px-3 py-2 whitespace-nowrap aantal-cell">@product.aantal</td>
-                                        <td class="px-3 py-2 whitespace-nowrap">@product.volgorde</td>
-                                    </tr>
-                                }
+    @foreach (var product in group)
+    {
+        <tr class="product-row" data-barcode="@product.orderregelnummer">
+            <td class="px-3 py-2 whitespace-nowrap"><input type="checkbox" class="scanned-checkbox" disabled @(product.gescand ? "checked" : "") /></td>
+             <td class="px-3 py-2 whitespace-nowrap"><input type="checkbox" class="gemeld-checkbox" disabled @(product.gemeld ? "checked" : "") /></td>
+            <td class="px-3 py-2 whitespace-nowrap">@product.orderregelnummer</td>
+            <td class="px-3 py-2 whitespace-nowrap">@product.artikelomschrijving</td>
+            <td class="px-3 py-2 whitespace-nowrap">@product.colli</td>
+            <td class="px-3 py-2 whitespace-nowrap aantal-cell">@product.aantal</td>
+            <!-- Add a "Report Missing" button -->
+            <td class="px-3 py-2 whitespace-nowrap">
+                <button type="button" class="px-2 py-1 text-sm text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 rounded-md" onclick="showMissingProductModal('@product.orderregelnummer')">
+    Melden
+</button>
+            </td>
+        </tr>
+    }
                             </tbody>
                         </table>
                     </div>
@@ -118,88 +126,224 @@
     }
 </div>
 
+<div id="missingProductModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Product Niet Gevonden</h3>
+            <div class="mt-2 px-7 py-3">
+                <p class="text-sm text-gray-500 mb-3" id="missingProductName"></p>
+                <form id="reportMissingForm" method="post" action="/api/ScanApi/ReportMissing">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="reportOrderregel" name="orderregelnummer" value="" />
+                    <input type="hidden" id="reportArtikel" name="artikelomschrijving" value="" />
+                    <div class="mb-4">
+                        <label for="reportReason" class="block text-sm font-medium text-gray-700 text-left">Reden:</label>
+                        <select id="reportReason" name="reason" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                            <option value="Niet gevonden">Niet gevonden in magazijn</option>
+                            <option value="Beschadigd">Product beschadigd</option>
+                            <option value="Anders">Anders</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label for="reportComments" class="block text-sm font-medium text-gray-700 text-left">Opmerkingen:</label>
+                        <textarea id="reportComments" name="comments" rows="3" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea>
+                    </div>
+                    <div class="items-center px-4 py-3">
+                        <button id="reportSubmitBtn" type="submit" class="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                            Melden
+                        </button>
+                        <button id="reportCancelBtn" type="button" class="ml-3 px-4 py-2 bg-gray-100 text-gray-700 text-base font-medium rounded-md shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                            Annuleren
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 @section Scripts {
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const barcodeInput = document.getElementById('barcodeInput');
-        const vehicleSelect = document.getElementById('vehicleSelect');
+        // Wait for the DOM to be fully loaded before attaching event listeners
+         // Function to show the missing product modal
+            function showMissingProductModal(barcode) {
+                const row = document.querySelector(`tr[data-barcode="${barcode}"]`);
+                if (row) {
+                    const artikelomschrijving = row.cells[3].textContent;
+                    const orderregelnummer = row.cells[2].textContent;
 
-        // Handle vehicle selection
-        vehicleSelect.addEventListener('change', function() {
-            const selectedVehicle = this.value;
-            if (selectedVehicle) {
-                window.location.href = `/Scan?vehicle=${encodeURIComponent(selectedVehicle)}`;
-            } else {
-                window.location.href = '/Scan';
-            }
-        });
+                    // Set the values in the modal
+                    reportOrderregel.value = orderregelnummer;
+                    reportArtikel.value = artikelomschrijving;
+                    missingProductName.textContent = `Product: ${artikelomschrijving} (${orderregelnummer})`;
 
-        // Handle barcode input
-        barcodeInput.addEventListener('keyup', async function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                const barcode = this.value.trim();
-                
-                if (barcode.length > 0) {
-                    try {
-                        const response = await fetch('/api/ScanApi/ProcessBarcode', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({ barcode: barcode })
-                        });
-
-                        const responseText = await response.text();
-
-                        if (!response.ok) {
-                            throw new Error(`API returned ${response.status}: ${responseText || 'No error message'}`);
-                        }
-
-                        const result = JSON.parse(responseText);
-
-                        if (result.success) {
-                            const row = document.querySelector(`tr[data-barcode="${barcode}"]`);
-                            if (row) {
-                                const checkbox = row.querySelector('.scanned-checkbox');
-                                const aantalCell = row.querySelector('.aantal-cell');
-                                // Update the aantal display
-                                if (aantalCell) {
-                                    aantalCell.textContent = result.aantal;
-                                }
-
-                                if (result.isComplete) {
-                                    // Turn green and check the box when complete
-                                    checkbox.checked = true;
-                                    row.classList.add('bg-green-300');
-                                    setTimeout(() => row.classList.remove('bg-green-300'), 2000);
-                                } else {
-                                    // Turn yellow when not yet complete
-                                    row.classList.add('bg-yellow-300');
-                                    setTimeout(() => row.classList.remove('bg-yellow-300'), 2000);
-                                }
-                            
-                            } else {
-                                console.warn('Barcode niet gevonden:', barcode);
-                            }
-                        } else {
-                            throw new Error(result.message || 'API Fout');
-                        }
-                    } catch (error) {
-                        console.error('Error details:', error);
-                        const row = document.querySelector(`tr[data-barcode="${barcode}"]`);
-                        if (row) {
-                            row.classList.add('bg-red-50');
-                            setTimeout(() => row.classList.remove('bg-red-50'), 2000);
-                        }
-                        console.log(`Scan gefaald: ${error.message}`);
-                    }
-
-                    this.value = '';
-                    this.focus();
+                    // Show the modal
+                    missingProductModal.classList.remove('hidden');
                 }
             }
+        document.addEventListener('DOMContentLoaded', function () {
+            // DOM element references
+            const barcodeInput = document.getElementById('barcodeInput');
+            const vehicleSelect = document.getElementById('vehicleSelect');
+            const missingProductModal = document.getElementById('missingProductModal');
+            const reportOrderregel = document.getElementById('reportOrderregel');
+            const reportArtikel = document.getElementById('reportArtikel');
+            const missingProductName = document.getElementById('missingProductName');
+            const reportCancelBtn = document.getElementById('reportCancelBtn');
+            const reportMissingForm = document.getElementById('reportMissingForm');
+
+           
+
+            // Event Listeners
+
+            // Handle vehicle selection
+            vehicleSelect.addEventListener('change', function () {
+                const selectedVehicle = this.value;
+                const url = selectedVehicle ? `/Scan?vehicle=${encodeURIComponent(selectedVehicle)}` : '/Scan';
+                window.location.href = url;
+            });
+
+            // Handle barcode input
+            barcodeInput.addEventListener('keyup', async function (event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    const barcode = this.value.trim();
+
+                    if (barcode.length > 0) {
+                        try {
+                            const response = await fetch('/api/ScanApi/ProcessBarcode', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ barcode: barcode })
+                            });
+
+                            if (!response.ok) {
+                                throw new Error(`API returned ${response.status}: ${await response.text() || 'No error message'}`);
+                            }
+
+                            const result = await response.json();
+
+                            if (result.success) {
+                                const row = document.querySelector(`tr[data-barcode="${barcode}"]`);
+                                if (row) {
+                                    const checkbox = row.querySelector('.scanned-checkbox');
+                                    const aantalCell = row.querySelector('.aantal-cell');
+
+                                    // Update the aantal display
+                                    if (aantalCell) {
+                                        aantalCell.textContent = result.aantal;
+                                    }
+
+                                    if (result.isComplete) {
+                                        // Turn green and check the box when complete
+                                        checkbox.checked = true;
+                                        row.classList.add('bg-green-300');
+                                        setTimeout(() => row.classList.remove('bg-green-300'), 2000);
+                                    } else {
+                                        // Turn yellow when not yet complete
+                                        row.classList.add('bg-yellow-300');
+                                        setTimeout(() => row.classList.remove('bg-yellow-300'), 2000);
+                                    }
+                                    
+                                    // Check if all products for this vehicle are scanned
+                                    if (result.allProductsScanned) {
+                                        // Show notification that all products are scanned
+                                        setTimeout(() => {
+                                            alert(`Alle producten voor dit voertuig zijn gescand of gemeld!`);
+                                        }, 500);
+                                    }
+                                } else {
+                                    console.warn('Barcode niet gevonden:', barcode);
+                                }
+                            } else {
+                                throw new Error(result.message || 'API Fout');
+                            }
+                        } catch (error) {
+                            console.error('Error details:', error);
+                            const row = document.querySelector(`tr[data-barcode="${barcode}"]`);
+                            if (row) {
+                                row.classList.add('bg-red-100');
+                                setTimeout(() => {
+                                    if (confirm(`Product ${barcode} niet gescand. Wilt u dit product als ontbrekend melden?`)) {
+                                        showMissingProductModal(barcode);
+                                    } else {
+                                        row.classList.remove('bg-red-100');
+                                    }
+                                }, 500);
+                            } else {
+                                console.warn(`Barcode niet gevonden in lijst: ${barcode}`);
+                                alert(`Barcode ${barcode} niet gevonden in de lijst voor dit voertuig.`);
+                            }
+                        }
+
+                        this.value = '';
+                        this.focus();
+                    }
+                }
+            });
+
+            // Close modal when cancel button is clicked
+            reportCancelBtn.addEventListener('click', function () {
+                missingProductModal.classList.add('hidden');
+                barcodeInput.focus();
+            });
+
+            // Handle form submission for reporting missing product
+            reportMissingForm.addEventListener('submit', async function (event) {
+                event.preventDefault();
+
+                const formData = new FormData(this);
+                try {
+                    const response = await fetch('/api/ScanApi/ReportMissing', {
+                        method: 'POST',
+                        headers: {
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                        },
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Server responded with ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    if (result.success) {
+                        // Add visual feedback that report was sent
+                        const row = document.querySelector(`tr[data-barcode="${reportOrderregel.value}"]`);
+                        if (row) {
+                            row.classList.add('bg-orange-100');
+                            // Check the gemeld checkbox
+                            const gemeldCheckbox = row.querySelector('.gemeld-checkbox');
+                            if (gemeldCheckbox) {
+                                gemeldCheckbox.checked = true;
+                            }
+                            // Add a span to indicate the product was reported
+                            const reportedSpan = document.createElement('span');
+                            reportedSpan.className = 'ml-2 text-xs text-orange-600';
+                            reportedSpan.textContent = '(Gemeld)';
+                            row.cells[4].appendChild(reportedSpan);
+                            
+                            // Check if all products for this vehicle are scanned
+                            if (result.allProductsScanned) {
+                                // Show notification that all products are scanned
+                                setTimeout(() => {
+                                    alert(`Alle producten voor dit voertuig zijn gescand of gemeld!`);
+                                }, 500);
+                            }
+                        }
+                    } else {
+                        throw new Error(result.message || 'Failed to report missing product');
+                    }
+
+                    // Close the modal
+                    missingProductModal.classList.add('hidden');
+                    barcodeInput.focus();
+                } catch (error) {
+                    console.error('Error reporting missing product:', error);
+                    alert('Fout bij het melden van het ontbrekende product: ' + error.message);
+                }
+            });
         });
-    });
     </script>
 }

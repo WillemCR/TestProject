@@ -5,7 +5,6 @@ namespace TestProject.Models
 {
     public class User : IdentityUser<int>
     {
-        public string Name { get; set; }
        
         public DateTime? LastLoggedIn { get; set; }
          

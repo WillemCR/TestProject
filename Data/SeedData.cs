@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using BCrypt.Net;
 using Microsoft.EntityFrameworkCore;
 using TestProject.Models;
-using BCrypt.Net;
 using Microsoft.AspNetCore.Identity;
 namespace TestProject.Data
 {
@@ -48,82 +46,72 @@ namespace TestProject.Data
     {
         (new User
         {
-            Name = "Willem",
             LastLoggedIn = DateTime.Now,
             Role = UserRole.Admin,
-            UserName = "willem@example.com",
+            UserName = "Willem",
             Email = "willem@example.com"
         }, "pass123"),
         (new User
         {
-            Name = "John Doe",
             LastLoggedIn = DateTime.Now.AddDays(-1),
             Role = roles[new Random().Next(roles.Length)],
-            UserName = "john.doe@example.com",
+            UserName = "JohnDoe",
             Email = "john.doe@example.com"
         }, "pass123"),
         (new User
         {
-            Name = "Jane Smith",
             LastLoggedIn = DateTime.Now.AddDays(-2),
             Role = roles[new Random().Next(roles.Length)],
-            UserName = "jane.smith@example.com",
+            UserName = "JaneSmith",
             Email = "jane.smith@example.com"
         }, "pass123"),
         (new User
         {
-            Name = "Bob Johnson",
             LastLoggedIn = DateTime.Now.AddDays(-3),
             Role = roles[new Random().Next(roles.Length)],
-            UserName = "bob.johnson@example.com",
+            UserName = "BobJohnson",
             Email = "bob.johnson@example.com"
         }, "pass123"),
         (new User
         {
-            Name = "Alice Brown",
             LastLoggedIn = DateTime.Now.AddDays(-4),
             Role = roles[new Random().Next(roles.Length)],
-            UserName = "alice.brown@example.com",
+            UserName = "AliceBrown",
             Email = "alice.brown@example.com"
         }, "pass123"),
         (new User
         {
-            Name = "Charlie Wilson",
             LastLoggedIn = DateTime.Now.AddDays(-5),
             Role = roles[new Random().Next(roles.Length)],
-            UserName = "charlie.wilson@example.com",
+            UserName = "CharlieWilson",
             Email = "charlie.wilson@example.com"
         }, "pass123"),
         (new User
         {
-            Name = "Diana Miller",
             LastLoggedIn = DateTime.Now.AddDays(-6),
             Role = roles[new Random().Next(roles.Length)],
-            UserName = "diana.miller@example.com",
+            UserName = "DianaMiller",
             Email = "diana.miller@example.com"
         }, "pass123"),
         (new User
         {
-            Name = "Edward Davis",
             LastLoggedIn = DateTime.Now.AddDays(-7),
             Role = roles[new Random().Next(roles.Length)],
-            UserName = "edward.davis@example.com",
+            UserName = "EdwardDavis",
             Email = "edward.davis@example.com"
         }, "pass123"),
         (new User
         {
-            Name = "Fiona Clark",
             LastLoggedIn = DateTime.Now.AddDays(-8),
             Role = roles[new Random().Next(roles.Length)],
-            UserName = "fiona.clark@example.com",
+            UserName = "FionaClark",
             Email = "fiona.clark@example.com"
         }, "pass123"),
         (new User
         {
-            Name = "George White",
             LastLoggedIn = DateTime.Now.AddDays(-9),
             Role = roles[new Random().Next(roles.Length)],
-            UserName = "george.white@example.com",
+            UserName = "GeorgeWhite",
             Email = "george.white@example.com"
         }, "pass123")
     };

@@ -51,5 +51,8 @@ namespace TestProject.Models
         public int volgorde { get; set; } = 0;
 
         public bool gescand { get; set; } = false;
+
+         public bool gemeld { get; set; } = false;
+
     }
 }

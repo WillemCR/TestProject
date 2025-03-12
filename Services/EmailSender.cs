@@ -17,12 +17,7 @@ namespace TestProject.Services
                 Console.WriteLine($"Attempting to send email to: {email}");
                 
                 // For development, only allow sending to local Papercut SMTP
-                if (!email.EndsWith("@localhost.com"))
-                {
-                    Console.WriteLine($"Development restriction: Emails can only be sent to @localhost.com addresses. Redirecting to test@localhost.com");
-                    email = "test@localhost.com";
-                }
-
+               
                 using var client = new SmtpClient("localhost", 25)
                 {
                     EnableSsl = false,
