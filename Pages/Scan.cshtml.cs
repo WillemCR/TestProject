@@ -54,15 +54,15 @@ namespace TestProject.Pages
                 var reportedOrderregels = await _context.MissingProductReports
                     .Select(r => r.OrderregelNummer)
                     .ToListAsync();
-
+                
                 // Update gemeld status based on MissingProductReports
-                foreach (var product in allProducts)
-                {
-                    if (reportedOrderregels.Contains(product.orderregelnummer))
-                    {
-                        product.gemeld = true;
-                    }
-                }
+                // foreach (var product in allProducts)
+                // {
+                //     if (reportedOrderregels.Contains(product.orderregelnummer))
+                //     {
+                //         product.gemeld = reportedOrderregels.Amount;
+                //     }
+                // }
 
                 // Split products into heavy and regular
                 HeavyProducts = allProducts
@@ -84,8 +84,8 @@ namespace TestProject.Pages
             if (string.IsNullOrEmpty(SelectedVehicle))
                 return;
                 
-            bool allHeavyScanned = HeavyProducts.All(p => p.gescand || p.gemeld);
-            bool allRegularScanned = RegularProducts.All(p => p.gescand || p.gemeld);
+            bool allHeavyScanned = HeavyProducts.All(p => p.gescand || p.gemeld > 0);
+            bool allRegularScanned = RegularProducts.All(p => p.gescand || p.gemeld > 0);
             
             if (allHeavyScanned && allRegularScanned && (HeavyProducts.Count > 0 || RegularProducts.Count > 0))
             {

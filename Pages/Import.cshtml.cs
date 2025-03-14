@@ -68,6 +68,9 @@ namespace TestProject.Pages
                     int volgordeValue = 0;
                     int.TryParse(worksheet.Cells[row, 21].Text, out volgordeValue);
 
+                    int colliValue = 0;
+                    int.TryParse(worksheet.Cells[row,16].Text, out colliValue);
+
                     var product = new Product
                     {
                         orderno = worksheet.Cells[row, 2].Text,
@@ -84,7 +87,7 @@ namespace TestProject.Pages
                         bron = worksheet.Cells[row, 13].Text,
                         artikelomschrijving = worksheet.Cells[row, 14].Text,
                         lengte = worksheet.Cells[row, 15].Text,
-                        colli = worksheet.Cells[row, 16].Text,
+                        colli = colliValue,
                         aantal = aantalValue,
                         referentie = worksheet.Cells[row, 18].Text,
                         voertuig = worksheet.Cells[row, 19].Text,

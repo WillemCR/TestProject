@@ -39,8 +39,13 @@ namespace TestProject.Controllers
                 {
                     return NotFound(new { success = false, message = "Product niet gevonden" });
                 }
+ 
+                if(!(product.colli>product.aantal))
+                    {
+                        return BadRequest(new { success = false, message = "Maximum aantal voor dit product is bereikt" });
+                    }
                 product.aantal += 1;
-                bool isComplete = product.aantal == int.Parse(product.colli);
+                bool isComplete = product.aantal == product.colli;
                 if (isComplete)
                 {
                     product.gescand = true;
@@ -58,7 +63,7 @@ namespace TestProject.Controllers
                         .ToListAsync();
                     
                     // Check if all products are either scanned or reported as missing
-                    allProductsScanned = vehicleProducts.All(p => p.gescand || p.gemeld);
+                    allProductsScanned = vehicleProducts.All(p => p.gescand || p.gemeld > 0);
                     
                     if (allProductsScanned)
                     {
@@ -72,7 +77,7 @@ namespace TestProject.Controllers
                     success = true,
                     message = "Product succesvol gescand",
                     aantal = product.aantal,
-                    colli = int.Parse(product.colli),
+                    colli = product.colli,
                     isComplete = isComplete,
                     allProductsScanned = allProductsScanned
                 });
@@ -97,6 +102,7 @@ namespace TestProject.Controllers
                     Artikelomschrijving = report.Artikelomschrijving,
                     Reason = report.Reason,
                     Comments = report.Comments,
+                    Amount = report.Amount,
                     ReportedAt = DateTime.Now,
                     ReportedBy = User.Identity.Name
                 };
@@ -112,7 +118,7 @@ namespace TestProject.Controllers
                 
                 if (product != null)
                 {
-                    product.gemeld = true;
+                    product.gemeld = report.Amount;
                     
                     // Check if all products for this vehicle are scanned
                     if (!string.IsNullOrEmpty(product.voertuig))
@@ -123,19 +129,19 @@ namespace TestProject.Controllers
                             .ToListAsync();
                         
                         // Check if all products are either scanned or reported as missing
-                        allProductsScanned = vehicleProducts.All(p => p.gescand || p.gemeld || p.orderregelnummer == report.OrderregelNummer);
+                        allProductsScanned = vehicleProducts.All(p => p.gescand || p.gemeld > 0 || p.orderregelnummer == report.OrderregelNummer);
                         
                         if (allProductsScanned)
                         {
                             // Log that all products are scanned
-                            Console.WriteLine($"All products for vehicle {product.voertuig} are scanned or reported.");
+                            Console.WriteLine($"Alle producten voor {product.voertuig} zijn gescand of gemeld.");
                         }
                     }
                 }
                 
                 await _context.SaveChangesAsync();
                
-                return Ok(new { success = true, allProductsScanned = allProductsScanned });
+                return Ok(new { success = true, allProductsScanned = allProductsScanned, aantalGemeld = report.Amount });
             }
             catch (Exception ex)
             {
@@ -154,6 +160,7 @@ namespace TestProject.Controllers
             public string Artikelomschrijving { get; set; }
             public string Reason { get; set; }
             public string Comments { get; set; }
+            public int Amount {get; set;}
         }
     }
 }

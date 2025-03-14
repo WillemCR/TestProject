@@ -9,6 +9,7 @@
 <div class="mb-4">
     <label for="vehicleSelect" class="block text-sm font-medium text-gray-700">Selecteer Voertuig:</label>
     <select id="vehicleSelect" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+        <option value="" disabled selected>Selecteer een voertuig</option>
         @foreach (var vehicle in Model.UniqueVehicles)
         {
             if (vehicle != null)
@@ -46,33 +47,35 @@
                             <thead class="bg-gray-50">
                                 <!-- Same table headers as before -->
                                 <tr>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gescand</th>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gemeld</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voltooid</th>
                                     <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orderregelnummer</th>
                                     <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artikelomschrijving</th>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Colli</th>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aantal</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Totaal</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gemeld</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gescand</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nog te laden</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acties</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-    @foreach (var product in group)
-    {
-        <tr class="product-row" data-barcode="@product.orderregelnummer">
-            <td class="px-3 py-2 whitespace-nowrap"><input type="checkbox" class="scanned-checkbox" disabled @(product.gescand ? "checked" : "") /></td>
-            <td class="px-3 py-2 whitespace-nowrap"><input type="checkbox" class="gemeld-checkbox" disabled @(product.gemeld ? "checked" : "") /></td>
-            <td class="px-3 py-2 whitespace-nowrap">@product.orderregelnummer</td>
-            <td class="px-3 py-2 whitespace-nowrap">@product.artikelomschrijving</td>
-            <td class="px-3 py-2 whitespace-nowrap">@product.colli</td>
-            <td class="px-3 py-2 whitespace-nowrap aantal-cell">@product.aantal</td>
-            <!-- Add a "Report Missing" button -->
-            <td class="px-3 py-2 whitespace-nowrap">
-                <button type="button" class="px-2 py-1 text-sm text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 rounded-md" onclick="showMissingProductModal('@product.orderregelnummer')">
-    Melden
-</button>
-            </td>
-        </tr>
-    }
-</tbody>
+                            @foreach (var product in group)
+                            {
+                                 <tr class="product-row" data-barcode="@product.orderregelnummer">
+                                    <td class="px-3 py-2 whitespace-nowrap"><input type="checkbox" class="scanned-checkbox" disabled @(product.gescand ? "checked" : "") /></td>
+                                    <td class="px-3 py-2 whitespace-nowrap">@product.orderregelnummer</td>
+                                    <td class="px-3 py-2 whitespace-nowrap">@product.artikelomschrijving</td>
+                                    <td class="px-3 py-2 whitespace-nowrap totaal-cell">@product.colli</td>
+                                    <td class="px-3 py-2 whitespace-nowrap gemeld-cell">@product.gemeld</td>
+                                    <td class="px-3 py-2 whitespace-nowrap geteld-cell">@product.aantal</td>
+                                    <td class="px-3 py-2 whitespace-nowrap text-red-400 over-cell">@(product.colli - @product.aantal - @product.gemeld)</td>
+                                    <td class="px-3 py-2 whitespace-nowrap">
+                                        <button type="button" class="px-2 py-1 text-sm text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 rounded-md" onclick="showMissingProductModal('@product.orderregelnummer')">
+                                             Melden
+                                        </button>
+                                    </td>
+                                </tr>
+                                }
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -91,32 +94,34 @@
                             <thead class="bg-gray-50">
                                 <!-- Same table headers as before -->
                                 <tr>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gescand</th>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gemeld</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voltooid</th>
                                     <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orderregelnummer</th>
                                     <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artikelomschrijving</th>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Colli</th>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aantal</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Totaal</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gemeld</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gescand</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nog te laden</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acties</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-    @foreach (var product in group)
-    {
-        <tr class="product-row" data-barcode="@product.orderregelnummer">
-            <td class="px-3 py-2 whitespace-nowrap"><input type="checkbox" class="scanned-checkbox" disabled @(product.gescand ? "checked" : "") /></td>
-             <td class="px-3 py-2 whitespace-nowrap"><input type="checkbox" class="gemeld-checkbox" disabled @(product.gemeld ? "checked" : "") /></td>
-            <td class="px-3 py-2 whitespace-nowrap">@product.orderregelnummer</td>
-            <td class="px-3 py-2 whitespace-nowrap">@product.artikelomschrijving</td>
-            <td class="px-3 py-2 whitespace-nowrap">@product.colli</td>
-            <td class="px-3 py-2 whitespace-nowrap aantal-cell">@product.aantal</td>
-            <!-- Add a "Report Missing" button -->
-            <td class="px-3 py-2 whitespace-nowrap">
-                <button type="button" class="px-2 py-1 text-sm text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 rounded-md" onclick="showMissingProductModal('@product.orderregelnummer')">
-    Melden
-</button>
-            </td>
-        </tr>
-    }
+                            @foreach (var product in group)
+                            {
+                                <tr class="product-row" data-barcode="@product.orderregelnummer">
+                                    <td class="px-3 py-2 whitespace-nowrap"><input type="checkbox" class="scanned-checkbox" disabled @(product.gescand ? "checked" : "") /></td>
+                                    <td class="px-3 py-2 whitespace-nowrap">@product.orderregelnummer</td>
+                                    <td class="px-3 py-2 whitespace-nowrap">@product.artikelomschrijving</td>
+                                    <td class="px-3 py-2 whitespace-nowrap totaal-cell">@product.colli</td>
+                                    <td class="px-3 py-2 whitespace-nowrap gemeld-cell">@product.gemeld</td>
+                                    <td class="px-3 py-2 whitespace-nowrap geteld-cell">@product.aantal</td>
+                                    <td class="px-3 py-2 whitespace-nowrap text-red-400 over-cell">@(product.colli - @product.aantal - @product.gemeld)</td>
+                                    <td class="px-3 py-2 whitespace-nowrap">
+                                        <button type="button" class="px-2 py-1 text-sm text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 rounded-md" onclick="showMissingProductModal('@product.orderregelnummer')">
+                                             Melden
+                                        </button>
+                                    </td>
+                                </tr>
+                                }
                             </tbody>
                         </table>
                     </div>
@@ -148,6 +153,17 @@
                         <label for="reportComments" class="block text-sm font-medium text-gray-700 text-left">Opmerkingen:</label>
                         <textarea id="reportComments" name="comments" rows="3" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea>
                     </div>
+                    <div class="mb-4">
+                        <label for="reportAmount" class="block text-sm font-medium text-gray-700 text-left">Aantal:</label>
+                        <input 
+                            type="number" 
+                            id="reportAmount" 
+                            name="amount" 
+                            class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" 
+                            min="0" 
+                            step="1"
+                        >
+                    </div>
                     <div class="items-center px-4 py-3">
                         <button id="reportSubmitBtn" type="submit" class="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
                             Melden
@@ -163,13 +179,13 @@
 </div>
 @section Scripts {
     <script>
-        // Wait for the DOM to be fully loaded before attaching event listeners
-         // Function to show the missing product modal
+       
+           // Function to show the missing product modal
             function showMissingProductModal(barcode) {
                 const row = document.querySelector(`tr[data-barcode="${barcode}"]`);
                 if (row) {
-                    const artikelomschrijving = row.cells[3].textContent;
-                    const orderregelnummer = row.cells[2].textContent;
+                    const artikelomschrijving = row.cells[2].textContent;
+                    const orderregelnummer = row.cells[1].textContent;
 
                     // Set the values in the modal
                     reportOrderregel.value = orderregelnummer;
@@ -180,6 +196,7 @@
                     missingProductModal.classList.remove('hidden');
                 }
             }
+             // Wait for the DOM to be fully loaded before attaching event listeners
         document.addEventListener('DOMContentLoaded', function () {
             // DOM element references
             const barcodeInput = document.getElementById('barcodeInput');
@@ -228,11 +245,19 @@
                                 const row = document.querySelector(`tr[data-barcode="${barcode}"]`);
                                 if (row) {
                                     const checkbox = row.querySelector('.scanned-checkbox');
-                                    const aantalCell = row.querySelector('.aantal-cell');
-
+                                    const gemeldField = row.querySelector('.gemeld-cell');
+                                    const totaalField = row.querySelector('.totaal-cell');
+                                    const geteldField = row.querySelector('.geteld-cell');
+                                    const overField = row.querySelector('.over-cell');
                                     // Update the aantal display
-                                    if (aantalCell) {
-                                        aantalCell.textContent = result.aantal;
+                                    if (geteldField) {
+                                        geteldField.textContent = result.aantal;
+                                    }
+                                    if (overField) {
+                                        const totaal = parseInt(totaalField.textContent, 10);
+                                        const geteld = parseInt(geteldField.textContent, 10);
+                                        const gemeld = parseInt(gemeldField.textContent, 10);
+                                        overField.textContent = totaal - geteld - gemeld;
                                     }
 
                                     if (result.isComplete) {
@@ -265,11 +290,7 @@
                             if (row) {
                                 row.classList.add('bg-red-100');
                                 setTimeout(() => {
-                                    if (confirm(`Product ${barcode} niet gescand. Wilt u dit product als ontbrekend melden?`)) {
-                                        showMissingProductModal(barcode);
-                                    } else {
-                                        row.classList.remove('bg-red-100');
-                                    }
+                                    row.classList.remove('bg-red-100');
                                 }, 500);
                             } else {
                                 console.warn(`Barcode niet gevonden in lijst: ${barcode}`);
@@ -312,18 +333,20 @@
                         // Add visual feedback that report was sent
                         const row = document.querySelector(`tr[data-barcode="${reportOrderregel.value}"]`);
                         if (row) {
-                            row.classList.add('bg-orange-100');
-                            // Check the gemeld checkbox
-                            const gemeldCheckbox = row.querySelector('.gemeld-checkbox');
-                            if (gemeldCheckbox) {
-                                gemeldCheckbox.checked = true;
+                            const gemeldField = row.querySelector('.gemeld-cell');
+                            const totaalField = row.querySelector('.totaal-cell');
+                            const geteldField = row.querySelector('.geteld-cell');
+                            const overField = row.querySelector('.over-cell'); 
+                            if (gemeldField) {
+                                gemeldField.textContent = result.aantalGemeld ;
                             }
-                            // Add a span to indicate the product was reported
-                            const reportedSpan = document.createElement('span');
-                            reportedSpan.className = 'ml-2 text-xs text-orange-600';
-                            reportedSpan.textContent = '(Gemeld)';
-                            row.cells[4].appendChild(reportedSpan);
                             
+                            if (overField) {
+                                const totaal = parseInt(totaalField.textContent, 10);
+                                const geteld = parseInt(geteldField.textContent, 10);
+                                const gemeld = parseInt(gemeldField.textContent, 10);
+                                overField.textContent = totaal - geteld - gemeld;
+                            }
                             // Check if all products for this vehicle are scanned
                             if (result.allProductsScanned) {
                                 // Show notification that all products are scanned
@@ -347,3 +370,4 @@
         });
     </script>
 }
+

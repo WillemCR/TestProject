@@ -1,5 +1,6 @@
 @page
 @model VehicleCreateModel
+
 @{
     ViewData["Title"] = "Voertuig Toevoegen";
 }
@@ -33,12 +34,11 @@
             <span asp-validation-for="Vehicle.Width" class="text-red-500 text-sm"></span>
         </div>
 
-        
         <div class="p-4 mt-4">
             <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                 Opslaan
             </button>
-            <a asp-page="/Index" class="text-blue-500 hover:text-blue-700 ml-2">
+            <a asp-page="./Index" class="text-blue-500 hover:text-blue-700 ml-2">
                 Terug naar overzicht
             </a>
         </div>

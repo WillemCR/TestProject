@@ -38,7 +38,7 @@ namespace TestProject.Models
 
         public string lengte { get; set; } = string.Empty;
 
-        public string colli { get; set; } = string.Empty;
+        public int colli { get; set; } = 0;
         
         public int aantal { get; set; } = 0;
 
@@ -52,7 +52,7 @@ namespace TestProject.Models
 
         public bool gescand { get; set; } = false;
 
-         public bool gemeld { get; set; } = false;
+         public int gemeld { get; set; } = 0;
 
     }
 }
