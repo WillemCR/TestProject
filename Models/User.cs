@@ -10,8 +10,10 @@ namespace TestProject.Models
          
         [Required]
         public UserRole Role { get; set; }
-        
+
+        public bool MustChangePassword { get; set; }
     }
+
 
     public enum UserRole
     {

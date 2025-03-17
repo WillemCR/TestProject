@@ -88,7 +88,11 @@
         })
         .then(data => {
             if (data.success) {
+               if (data.redirectUrl) {
+                window.location.href = data.redirectUrl;
+            } else {
                 window.location.href = '/';
+            }
             } else {
                 alert('Wachtwoord is incorrect');
             }

@@ -66,6 +66,12 @@ namespace TestProject.Pages
                 return Page();
             }
 
+            // Check if user must change password
+            if (user.MustChangePassword)
+            {
+                return RedirectToPage("/ChangePasswordRequired");
+            }
+
             return RedirectToPage("/Index");
         }
 
@@ -94,6 +100,8 @@ namespace TestProject.Pages
             {
                 return BadRequest("User not found");
             }
+                  
+            
 
             var result = 
             await _signInManager.PasswordSignInAsync(user, password, isPersistent: true, lockoutOnFailure: false);
@@ -101,8 +109,12 @@ namespace TestProject.Pages
             {
                 return new JsonResult(new { success = false });
             }
-
+             if (user.MustChangePassword)
+                {
+                    return new JsonResult(new { success = true, redirectUrl = Url.Page("/ChangePasswordRequired") });
+                }
             return new JsonResult(new { success = true });
+             
         }
     }
 }
