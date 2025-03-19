@@ -6,6 +6,7 @@ using System;
 using System.Threading.Tasks;
 using TestProject.Data;
 using TestProject.Models;
+using Microsoft.Extensions.Logging;
 
 namespace TestProject.Controllers
 {
@@ -19,16 +20,19 @@ namespace TestProject.Controllers
     public class ScanApiController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        
+        private readonly ILogger<ScanApiController> _logger;
+
         /// <summary>
-        /// Constructor that injects the database context
+        /// Constructor that injects the database context and logger
         /// </summary>
         /// <param name="context">The application database context</param>
-        public ScanApiController(ApplicationDbContext context)
+        /// <param name="logger">The logger for this controller</param>
+        public ScanApiController(ApplicationDbContext context, ILogger<ScanApiController> logger)
         {
             _context = context;
+            _logger = logger;
         }
-        
+
         /// <summary>
         /// Processes a barcode scan, updating the product count in the database
         /// </summary>
@@ -39,8 +43,8 @@ namespace TestProject.Controllers
         {
             try
             {
-                Console.WriteLine("ProcessBarcode API endpoint reached");
-               
+                _logger.LogInformation("ProcessBarcode API endpoint bereikt");
+
                 // Validate the request
                 if (request == null || string.IsNullOrEmpty(request.Barcode))
                 {
@@ -50,15 +54,15 @@ namespace TestProject.Controllers
                 // Find the product with the matching barcode
                 var product = await _context.Products
                     .FirstOrDefaultAsync(p => p.orderregelnummer == request.Barcode);
-               
+
                 // Return 404 if product not found
                 if (product == null)
                 {
                     return NotFound(new { success = false, message = "Product niet gevonden" });
                 }
- 
+
                 // Check if we've already scanned the maximum number of this product
-                if(!(product.colli > product.aantal + product.gemeld))
+                if (!(product.colli > product.aantal + product.gemeld))
                 {
                     return BadRequest(new { success = false, message = "Maximum aantal voor dit product is bereikt" });
                 }
@@ -70,44 +74,40 @@ namespace TestProject.Controllers
                 {
                     product.gescand = true;
                 }
-           
+
                 // Save changes to the database
                 await _context.SaveChangesAsync();
-                
+
                 // Check if all products for this vehicle are scanned or reported
                 bool allProductsScanned = false;
                 if (isComplete && !string.IsNullOrEmpty(product.voertuig))
                 {
-                    // Get all products for this vehicle
-                    var vehicleProducts = await _context.Products
-                        .Where(p => p.voertuig == product.voertuig)
-                        .ToListAsync();
-                    
-                    // A product is considered processed if it's either scanned or reported as missing
-                    allProductsScanned = vehicleProducts.All(p => p.gescand || p.gemeld > 0);
-                    
-                    if (allProductsScanned)
-                    {
-                        // Log that all products are scanned
-                        Console.WriteLine($"All products for vehicle {product.voertuig} are scanned or reported.");
-                    }
+                    allProductsScanned = await CheckAllVehicleProductsScanned(product.voertuig);
                 }
+                
+                bool allCustomerProductsScanned = false;
+                if (isComplete && !string.IsNullOrEmpty(product.klantnaam))
+                {
+                    allCustomerProductsScanned = await CheckAllCustomerProductsScanned(product.voertuig, product.klantnaam);
+                }
+
                
                 // Return success response with additional information
-                return Ok(new {
+                return Ok(new
+                {
                     success = true,
                     message = "Product succesvol gescand",
                     aantal = product.aantal,
                     colli = product.colli,
                     isComplete = isComplete,
-                    allProductsScanned = allProductsScanned
+                    allProductsScanned = allProductsScanned,
+                    allCustomerProductsScanned = allCustomerProductsScanned
                 });
             }
             catch (Exception ex)
             {
-                // Log and return error
-                Console.WriteLine($"API Exception: {ex.Message}");
-                return StatusCode(500, new { success = false, message = ex.Message });
+                _logger.LogError(ex, "API Exception");
+                return StatusCode(500, new { success = false, message = "Er is een fout opgetreden" });
             }
         }
 
@@ -122,6 +122,29 @@ namespace TestProject.Controllers
         {
             try
             {
+                _logger.LogInformation("ReportMissing API endpoint bereikt");
+
+                // Get the product first to validate the amount
+                var product = await _context.Products
+                    .FirstOrDefaultAsync(p => p.orderregelnummer == report.OrderregelNummer);
+
+                if (product == null)
+                {
+                    return NotFound(new { success = false, message = "Product niet gevonden" });
+                }
+
+                // Calculate remaining amount that can be reported
+                int remainingAmount = product.colli - product.aantal - product.gemeld;
+
+                // Validate the reported amount
+                if (report.Amount > remainingAmount)
+                {
+                    return BadRequest(new { 
+                        success = false, 
+                        message = $"U kunt maximaal {remainingAmount} producten melden als ontbrekend" 
+                    });
+                }
+
                 // Create a new missing product report entry
                 var missingReport = new MissingProductReportEntity
                 {
@@ -133,60 +156,47 @@ namespace TestProject.Controllers
                     ReportedAt = DateTime.Now,
                     ReportedBy = User.Identity.Name
                 };
-                
+
                 // Add to database
                 _context.MissingProductReports.Add(missingReport);
-                
+
                 // Update the product's gemeld status
-                var product = await _context.Products
-                    .FirstOrDefaultAsync(p => p.orderregelnummer == report.OrderregelNummer);
-                
+                product.gemeld = report.Amount;
+
+                // Check if all products for this vehicle are scanned or reported
                 bool allProductsScanned = false;
                 bool isComplete = false;
-                if (product != null)
+                if (!string.IsNullOrEmpty(product.voertuig))
                 {
-                    // Update the reported count for this product
-                    product.gemeld = report.Amount;
-                    
-                    // Check if all products for this vehicle are scanned or reported
-                    if (!string.IsNullOrEmpty(product.voertuig))
+                    isComplete = product.aantal + product.gemeld == product.colli;
+                    if (isComplete)
                     {
-                        // Get all products for this vehicle
-                        var vehicleProducts = await _context.Products
-                            .Where(p => p.voertuig == product.voertuig)
-                            .ToListAsync();
-                        
-                        isComplete = product.aantal + product.gemeld == product.colli;
-                        if (isComplete)
-                        {
-                            product.gescand = true;
-                        }
-                        
-                        // A product is considered processed if it's either scanned or reported as missing
-                        // Note: We include the current product in the check even if it's not yet saved
-                        allProductsScanned = vehicleProducts.All(p => p.gescand || p.orderregelnummer == report.OrderregelNummer);
-                        
-                        if (allProductsScanned)
-                        {
-                            // Log that all products are processed
-                            Console.WriteLine($"Alle producten voor {product.voertuig} zijn gescand of gemeld.");
-                        }
+                        product.gescand = true;
                     }
+
+                    // Check if all products for this vehicle are scanned or reported
+                    allProductsScanned = await CheckAllVehicleProductsScanned(product.voertuig, report.OrderregelNummer);
                 }
-                
+
                 // Save all changes to the database
                 await _context.SaveChangesAsync();
-               
+                bool allCustomerProductsScanned = false;
+                if (isComplete && !string.IsNullOrEmpty(product.klantnaam))
+                {
+                    allCustomerProductsScanned = await CheckAllCustomerProductsScanned(product.voertuig, product.klantnaam);
+                }
+
+  
                 // Return success response with additional information
-                return Ok(new { success = true, allProductsScanned = allProductsScanned, aantalGemeld = report.Amount, isComplete = isComplete });
+                return Ok(new { success = true,  allCustomerProductsScanned = allCustomerProductsScanned, allProductsScanned = allProductsScanned, aantalGemeld = report.Amount, isComplete = isComplete });
             }
             catch (Exception ex)
             {
-                // Return error response
-                return StatusCode(500, new { success = false, message = ex.Message });
+                _logger.LogError(ex, "Error reporting missing product");
+                return StatusCode(500, new { success = false, message = "Er is een fout opgetreden bij het melden van het ontbrekende product" });
             }
         }
-        
+
         /// <summary>
         /// Request model for barcode scanning
         /// </summary>
@@ -197,7 +207,7 @@ namespace TestProject.Controllers
             /// </summary>
             public string Barcode { get; set; }
         }
-        
+
         /// <summary>
         /// Request model for reporting missing products
         /// </summary>
@@ -207,26 +217,77 @@ namespace TestProject.Controllers
             /// The order line number of the missing product
             /// </summary>
             public string OrderregelNummer { get; set; }
-            
+
             /// <summary>
             /// The description of the missing product
             /// </summary>
             public string Artikelomschrijving { get; set; }
-            
+
             /// <summary>
             /// The reason why the product is missing
             /// </summary>
             public string Reason { get; set; }
-            
+
             /// <summary>
             /// Additional comments about the missing product
             /// </summary>
             public string Comments { get; set; }
-            
+
             /// <summary>
             /// The number of missing items
             /// </summary>
-            public int Amount {get; set;}
+            public int Amount { get; set; }
+        }
+
+        /// <summary>
+        /// Checks if all products for a specific vehicle are scanned or reported
+        /// </summary>
+        /// <param name="vehicleId">The vehicle ID to check</param>
+        /// <param name="currentOrderNumber">Optional order number for ReportMissing case</param>
+        /// <returns>True if all products are scanned or reported</returns>
+        private async Task<bool> CheckAllVehicleProductsScanned(string vehicleId, string currentOrderNumber = null)
+        {
+            // Get all products for this vehicle
+            var vehicleProducts = await _context.Products
+                .Where(p => p.voertuig == vehicleId)
+                .ToListAsync();
+
+            bool allScanned;
+            
+            // If we have a current order number (for ReportMissing case), use that in the check
+            if (!string.IsNullOrEmpty(currentOrderNumber))
+            {
+                allScanned = vehicleProducts.All(p => p.gescand || p.orderregelnummer == currentOrderNumber);
+            }
+            else
+            {
+                // For ProcessBarcode case
+                allScanned = vehicleProducts.All(p => p.gescand || p.gemeld > 0);
+            }
+
+            if (allScanned)
+            {
+                Console.WriteLine($"All products for vehicle {vehicleId} are scanned or reported.");
+            }
+            
+            return allScanned;
+        }
+
+        /// <summary>
+        /// Checks if all products for a specific customer and vehicle are scanned or reported
+        /// </summary>
+        /// <param name="vehicleId">The vehicle ID to check</param>
+        /// <param name="customerName">The customer name to check</param>
+        /// <returns>True if all products are scanned or reported</returns>
+        private async Task<bool> CheckAllCustomerProductsScanned(string vehicleId, string customerName)
+        {
+            // Get all products for this customer and vehicle
+            var customerProducts = await _context.Products
+                .Where(p => p.voertuig == vehicleId && p.klantnaam == customerName)
+                .ToListAsync();
+
+            // Check if all products for this customer are processed
+            return customerProducts.All(p => p.gescand || p.gemeld > 0);
         }
     }
 }
