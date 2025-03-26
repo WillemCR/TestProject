@@ -42,73 +42,130 @@
 
 <!-- Products container -->
 <div class="mt-4" id="productsContainer">
-    @if (Model.SelectedVehicle != null && !string.IsNullOrEmpty(Model.CurrentCustomer))
+    @if (Model.SelectedVehicle != null)
     {
-        <!-- Define product types to iterate through -->
-        var productCategories = new[] 
+        @if (Model.ShowRegularProductsMode && Model.AllHeavyProductsScanned)
         {
-            new { Title = "Zware producten", Products = Model.HeavyProducts },
-            new { Title = "Gewone producten", Products = Model.RegularProducts }
-        };
-
-        <!-- Single loop to handle both product types -->
-        @foreach (var category in productCategories)
-        {
-            @if (category.Title == "Zware producten" && !category.Products.Any())
+            <!-- Regular Products Mode -->
+            @if (!string.IsNullOrEmpty(Model.CurrentCustomer))
             {
-                continue; // Skip heavy products section if there are none
-            }
-            
-            <div class="mb-8">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4">@category.Title</h2>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voltooid</th>
-                                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orderregelnummer</th>
-                                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artikelomschrijving</th>
-                                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Totaal</th>
-                                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gemeld</th>
-                                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gescand</th>
-                                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nog te laden</th>
-                                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acties</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                        @foreach (var product in category.Products)
-                        {
-                            <tr class="product-row" data-barcode="@product.orderregelnummer">
-                                <td class="px-3 py-2 whitespace-nowrap"><input type="checkbox" class="scanned-checkbox" disabled @(product.gescand ? "checked" : "") /></td>
-                                <td class="px-3 py-2 whitespace-nowrap">@product.orderregelnummer</td>
-                                <td class="px-3 py-2 whitespace-nowrap">@product.artikelomschrijving</td>
-                                <td class="px-3 py-2 whitespace-nowrap totaal-cell">@product.colli</td>
-                                <td class="px-3 py-2 whitespace-nowrap gemeld-cell">@product.gemeld</td>
-                                <td class="px-3 py-2 whitespace-nowrap geteld-cell">@product.aantal</td>
-                                <td class="px-3 py-2 whitespace-nowrap text-red-400 over-cell">@(product.colli - @product.aantal - @product.gemeld)</td>
-                                <td class="px-3 py-2 whitespace-nowrap">
-                                    <button type="button" class="px-2 py-1 text-sm text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 rounded-md" onclick="showMissingProductModal('@product.orderregelnummer')">
-                                        Melden
-                                    </button>
-                                </td>
-                            </tr>
-                        }
-                        </tbody>
-                    </table>
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Gewone producten</h2>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voltooid</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orderregelnummer</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artikelomschrijving</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Totaal</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gemeld</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gescand</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nog te laden</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acties</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach (var product in Model.RegularProducts)
+                            {
+                                <tr class="product-row" data-barcode="@product.orderregelnummer">
+                                    <td class="px-3 py-2 whitespace-nowrap"><input type="checkbox" class="scanned-checkbox" disabled @(product.gescand ? "checked" : "") /></td>
+                                    <td class="px-3 py-2 whitespace-nowrap">@product.orderregelnummer</td>
+                                    <td class="px-3 py-2 whitespace-nowrap">@product.artikelomschrijving</td>
+                                    <td class="px-3 py-2 whitespace-nowrap totaal-cell">@product.colli</td>
+                                    <td class="px-3 py-2 whitespace-nowrap gemeld-cell">@product.gemeld</td>
+                                    <td class="px-3 py-2 whitespace-nowrap geteld-cell">@product.aantal</td>
+                                    <td class="px-3 py-2 whitespace-nowrap over-cell @(product.colli - product.aantal - product.gemeld == 0 ? "text-green-500" : "text-red-500")">@(product.colli - @product.aantal - @product.gemeld)</td>
+                                    <td class="px-3 py-2 whitespace-nowrap">
+                                        <button type="button" class="px-2 py-1 text-sm text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 rounded-md" onclick="showMissingProductModal('@product.orderregelnummer')">
+                                            Melden
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
+                
+                <!-- Next customer button (only shown when all products for current customer are scanned) -->
+                @if (ViewData["NextCustomer"] != null)
+                {
+                    <form method="post" asp-page-handler="NextCustomer">
+                        <input type="hidden" name="vehicle" value="@Model.SelectedVehicle" />
+                        <input type="hidden" name="nextCustomer" value="@ViewData["NextCustomer"]" />
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md">
+                            Ga naar volgende klant: @ViewData["NextCustomer"]
+                        </button>
+                    </form>
+                }
+            }
         }
-        
-        <!-- Next customer button (only shown when all products for current customer are scanned) -->
-        @if (ViewData["NextCustomer"] != null)
+        else
         {
-            <form method="post" asp-page-handler="NextCustomer">
-                <input type="hidden" name="vehicle" value="@Model.SelectedVehicle" />
-                <input type="hidden" name="nextCustomer" value="@ViewData["NextCustomer"]" />
-                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md">
-                    Ga naar volgende klant: @ViewData["NextCustomer"]
-                </button>
-            </form>
+            <!-- Heavy Products Mode -->
+            @if (Model.HeavyProducts.Any())
+            {
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Zware producten</h2>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voltooid</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orderregelnummer</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artikelomschrijving</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Totaal</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gemeld</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gescand</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nog te laden</th>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acties</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach (var product in Model.HeavyProducts)
+                            {
+                                <tr class="product-row" data-barcode="@product.orderregelnummer">
+                                    <td class="px-3 py-2 whitespace-nowrap"><input type="checkbox" class="scanned-checkbox" disabled @(product.gescand ? "checked" : "") /></td>
+                                    <td class="px-3 py-2 whitespace-nowrap">@product.orderregelnummer</td>
+                                    <td class="px-3 py-2 whitespace-nowrap">@product.artikelomschrijving</td>
+                                    <td class="px-3 py-2 whitespace-nowrap totaal-cell">@product.colli</td>
+                                    <td class="px-3 py-2 whitespace-nowrap gemeld-cell">@product.gemeld</td>
+                                    <td class="px-3 py-2 whitespace-nowrap geteld-cell">@product.aantal</td>
+                                    <td class="px-3 py-2 whitespace-nowrap over-cell @(product.colli - product.aantal - product.gemeld == 0 ? "text-green-500" : "text-red-500")">@(product.colli - @product.aantal - @product.gemeld)</td>
+                                    <td class="px-3 py-2 whitespace-nowrap">
+                                        <button type="button" class="px-2 py-1 text-sm text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 rounded-md" onclick="showMissingProductModal('@product.orderregelnummer')">
+                                            Melden
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Show Regular Products button only when all heavy products are scanned -->
+                @if (Model.AllHeavyProductsScanned)
+                {
+                    <form method="post" asp-page-handler="ShowRegularProducts">
+                        <input type="hidden" name="vehicle" value="@Model.SelectedVehicle" />
+                        <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md">
+                            Ga naar gewone producten
+                        </button>
+                    </form>
+                }
+            }
+            else
+            {
+                <!-- No heavy products, go straight to regular products -->
+                <form method="post" asp-page-handler="ShowRegularProducts">
+                    <input type="hidden" name="vehicle" value="@Model.SelectedVehicle" />
+                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md">
+                        Ga naar gewone producten
+                    </button>
+                </form>
+            }
         }
     }
 </div>
@@ -216,19 +273,7 @@
 
                     if (barcode.length > 0) {
                         try {
-                            const response = await fetch('/api/ScanApi/ProcessBarcode', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({ barcode: barcode })
-                            });
-
-                            if (!response.ok) {
-                                throw new Error(`API returned ${response.status}: ${await response.text() || 'Geen foutmelding'}`);
-                            }
-
-                            const result = await response.json();
+                            const result = await processBarcodeWithRetry(barcode);
 
                             if (result.success) {
                                 const row = document.querySelector(`tr[data-barcode="${barcode}"]`);
@@ -246,12 +291,15 @@
                                         const totaal = parseInt(totaalField.textContent, 10);
                                         const geteld = parseInt(geteldField.textContent, 10);
                                         const gemeld = parseInt(gemeldField.textContent, 10);
-                                        overField.textContent = totaal - geteld - gemeld;
+                                        let over = totaal - geteld - gemeld;
+                                        if(over == 0) {
+                                            overField.classList.add('text-green-500');
+                                            overField.classList.remove('text-red-500');
+                                        }
+                                        overField.textContent = over;
                                     }
-
+                                     checkbox.checked = result.isComplete;
                                     if (result.isComplete) {
-                                        // Turn green and check the box when complete
-                                        checkbox.checked = true;
                                         row.classList.add('bg-green-300');
                                         setTimeout(() => row.classList.remove('bg-green-300'), 2000);
                                     } else {
@@ -260,20 +308,20 @@
                                         setTimeout(() => row.classList.remove('bg-yellow-300'), 2000);
                                     }
                                     
-                                    // Check if all products for this customer are scanned
-                                    if (result.allCustomerProductsScanned) {
+                                    // Check if all products for this vehicle are scanned
+                                    if (result.allProductsScanned) {
+                                        // Show notification that all products are scanned
+                                        setTimeout(() => {
+                                            alert(`Alle producten voor dit voertuig zijn gescand of gemeld!`);
+                                        }, 500);
+                                    }
+                                    // Check if all products for current customer are scanned
+                                    else if (result.allCustomerProductsScanned) {
                                         // Show notification that all products are scanned
                                         setTimeout(() => {
                                             alert(`Alle producten voor deze klant zijn gescand of gemeld!`);
                                             // Reload the page to show the next customer button
                                             window.location.reload();
-                                        }, 500);
-                                    }
-                                    // Check if all products for this vehicle are scanned
-                                    else if (result.allProductsScanned) {
-                                        // Show notification that all products are scanned
-                                        setTimeout(() => {
-                                            alert(`Alle producten voor dit voertuig zijn gescand of gemeld!`);
                                         }, 500);
                                     }
                                 } else {
@@ -308,7 +356,36 @@
                 barcodeInput.focus();
             });
 
-            // Handle form submission for reporting missing product
+            // Add function to handle missing product reports
+            async function processMissingProductReport(formData, maxRetries = 3) {
+                let attempt = 0;
+                while (attempt < maxRetries) {
+                    try {
+                        const response = await fetch('/api/ScanApi/ReportMissing', {
+                            method: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: formData
+                        });
+
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(`HTTP ${response.status}: ${errorText}`);
+                        }
+
+                        return await response.json();
+                    } catch (error) {
+                        attempt++;
+                        if (attempt === maxRetries) {
+                            throw error;
+                        }
+                        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+                    }
+                }
+            }
+
+            // Update the form submission handler
             reportMissingForm.addEventListener('submit', async function (event) {
                 event.preventDefault();
 
@@ -320,23 +397,15 @@
                     alert(`U kunt maximaal ${maxAmount} producten melden als ontbrekend.`);
                     return;
                 }
+                if (!formData.get('comments').trim()) {
+                    formData.set('comments', 'Ontbrekend product gemeld');
+                }
 
                 try {
-                    const response = await fetch('/api/ScanApi/ReportMissing', {
-                        method: 'POST',
-                        headers: {
-                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-                        },
-                        body: formData
-                    });
+                    const result = await processMissingProductReport(formData);
 
-                    if (!response.ok) {
-                        throw new Error(`Server reageerde met ${response.status}`);
-                    }
-
-                    const result = await response.json();
                     if (result.success) {
-                        // Add visual feedback that report was sent
+                        // Update UI with the result
                         const row = document.querySelector(`tr[data-barcode="${reportOrderregel.value}"]`);
                         if (row) {
                             const checkbox = row.querySelector('.scanned-checkbox');
@@ -344,6 +413,7 @@
                             const totaalField = row.querySelector('.totaal-cell');
                             const geteldField = row.querySelector('.geteld-cell');
                             const overField = row.querySelector('.over-cell');
+                            
                             if (gemeldField) {
                                 gemeldField.textContent = result.aantalGemeld;
                             }
@@ -354,38 +424,101 @@
                                 const gemeld = parseInt(gemeldField.textContent, 10);
                                 overField.textContent = totaal - geteld - gemeld;
                             }
-                            if(result.isComplete) {
-                                checkbox.checked = true;
-                            }
+                            checkbox.checked = result.isComplete;
                             
-                            // Check if all products for this customer are scanned
-                            if (result.allCustomerProductsScanned) {
-                                // Show notification that all products are scanned
-                                setTimeout(() => {
-                                    alert(`Alle producten voor deze klant zijn gescand of gemeld!`);
-                                    // Reload the page to show the next customer button
-                                    window.location.reload();
-                                }, 500);
-                            }
-                            // Check if all products for this vehicle are scanned
-                            else if (result.allProductsScanned) {
-                                // Show notification that all products are scanned
+                            // Check completion status
+                            if (result.allProductsScanned) {
                                 setTimeout(() => {
                                     alert(`Alle producten voor dit voertuig zijn gescand of gemeld!`);
                                 }, 500);
+                            } else if (result.allCustomerProductsScanned) {
+                                setTimeout(() => {
+                                    alert(`Alle producten voor deze klant zijn gescand of gemeld!`);
+                                    window.location.reload();
+                                }, 500);
                             }
                         }
+
+                        // Close the modal
+                        missingProductModal.classList.add('hidden');
+                        barcodeInput.focus();
                     } else {
                         throw new Error(result.message || 'Mislukt om ontbrekend product te melden');
                     }
-
-                    // Close the modal
-                    missingProductModal.classList.add('hidden');
-                    barcodeInput.focus();
                 } catch (error) {
                     console.error('Fout bij het melden van het ontbrekende product:', error);
                     alert('Fout bij het melden van het ontbrekende product: ' + error.message);
                 }
+            });
+
+            // Add debouncing for barcode input
+            const debounce = (func, wait) => {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            };
+
+            // Improved error handling and retry logic
+            async function processBarcodeWithRetry(barcode, maxRetries = 3) {
+                let attempt = 0;
+                while (attempt < maxRetries) {
+                    try {
+                        const response = await fetch('/api/ScanApi/ProcessBarcode', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: JSON.stringify({ barcode })
+                        });
+
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(`HTTP ${response.status}: ${errorText}`);
+                        }
+
+                        return await response.json();
+                    } catch (error) {
+                        attempt++;
+                        if (attempt === maxRetries) {
+                            throw error;
+                        }
+                        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+                    }
+                }
+            }
+
+            // Improved form validation
+            function validateMissingProductForm(formData) {
+                const amount = parseInt(formData.get('amount'), 10);
+                const maxAmount = parseInt(document.getElementById('reportAmount').max, 10);
+                const comments = formData.get('comments').trim();
+
+                if (isNaN(amount) || amount <= 0) {
+                    throw new Error('Aantal moet een positief getal zijn');
+                }
+
+                if (amount > maxAmount) {
+                    throw new Error(`U kunt maximaal ${maxAmount} producten melden als ontbrekend`);
+                }
+
+                if (!formData.get('reason')) {
+                    throw new Error('Selecteer een reden');
+                }
+
+                return true;
+            }
+
+            // Add error boundary
+            window.addEventListener('error', function(event) {
+                console.error('Global error:', event.error);
+                alert('Er is een fout opgetreden. Vernieuw de pagina en probeer het opnieuw.');
             });
         });
     </script>
