@@ -35,6 +35,7 @@ namespace TestProject.Pages
             VehicleStatuses = new List<VehicleStatus>();
             RegularOrders = new List<Order>();
             HeavyOrders = new List<Order>();
+            LosseArtikelenPerOrder = new Dictionary<string, List<LosseArtikelen>>();
         }
 
         /// <summary>
@@ -93,6 +94,11 @@ namespace TestProject.Pages
         /// Next customer to display
         /// </summary>
         public string NextCustomer { get; set; }
+
+        /// <summary>
+        /// Add new property to store loose articles
+        /// </summary>
+        public Dictionary<string, List<LosseArtikelen>> LosseArtikelenPerOrder { get; set; } = new Dictionary<string, List<LosseArtikelen>>();
 
         /// <summary>
         /// Handles navigation to regular orders page
@@ -172,7 +178,18 @@ namespace TestProject.Pages
                         .Where(o => o.voertuig == vehicle)
                         .ToListAsync();
 
-                    _logger.LogInformation($"Found {allOrders.Count} total orders");
+                    // Get all loose articles that correspond to the orders
+                    var orderRegelnummers = allOrders.Select(o => o.orderregelnummer).ToList();
+                    var losseArtikelen = await _context.LosseArtikelen
+                        .Where(la => orderRegelnummers.Contains(la.orderid))
+                        .ToListAsync();
+
+                    // Group loose articles by order number
+                    LosseArtikelenPerOrder = losseArtikelen
+                        .GroupBy(la => la.orderid)
+                        .ToDictionary(g => g.Key, g => g.ToList());
+
+                    _logger.LogInformation($"Found {losseArtikelen.Count} loose articles for {LosseArtikelenPerOrder.Count} orders");
 
                     var heavyProductNames = await _context.HeavyProducts
                         .Select(hp => hp.Name)
@@ -240,6 +257,7 @@ namespace TestProject.Pages
                 VehicleStatuses = new List<VehicleStatus>();
                 RegularOrders = new List<Order>();
                 HeavyOrders = new List<Order>();
+                LosseArtikelenPerOrder = new Dictionary<string, List<LosseArtikelen>>();
                 return Page();
             }
         }

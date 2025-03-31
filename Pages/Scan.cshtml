@@ -55,14 +55,13 @@
             }
         </div>
 
-        @if (!Model.ShowRegularProductsMode && Model.HeavyOrders.Any())
+        @if (Model.HeavyOrders.Any() && !Model.ShowRegularProductsMode)
         {
-            <partial name="_ProductTable" model='(Title: "Zware producten", Orders: Model.HeavyOrders, ShowCustomerName: true)' />
+            <partial name="_ProductTable" model='(Title: "Zware Orders", Orders: Model.HeavyOrders, ShowCustomerName: true, LosseArtikelenPerOrder: Model.LosseArtikelenPerOrder)' />
         }
-        else if (Model.ShowRegularProductsMode && Model.RegularOrders.Any())
+        else
         {
-            <h3 class="text-xl font-bold mb-4">Klant: @Model.CurrentCustomer</h3>
-            <partial name="_ProductTable" model='(Title: "Gewone producten", Orders: Model.RegularOrders, ShowCustomerName: false)' />
+            <partial name="_ProductTable" model='(Title: "Reguliere Orders", Orders: Model.RegularOrders, ShowCustomerName: false, LosseArtikelenPerOrder: Model.LosseArtikelenPerOrder)' />
         }
     }
 </div>

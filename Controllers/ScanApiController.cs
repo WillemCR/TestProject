@@ -325,21 +325,24 @@ namespace TestProject.Controllers
                 .Select(hp => hp.Name)
                 .ToListAsync();
 
-            // Get all heavy products for this vehicle
-            var allVehicleHeavyProducts = await _context.Orders
+            // Single database call to get all relevant products
+            var allProducts = await _context.Orders
                 .Where(p => p.voertuig == vehicleId)
+                .ToListAsync();
+
+            // Filter in memory
+            var allVehicleHeavyProducts = allProducts
                 .Where(p => heavyProductNames.Any(hp => 
                     p.artikelomschrijving != null && 
                     p.artikelomschrijving.Contains(hp)))
-                .ToListAsync();
+                .ToList();
 
-            // Get all regular products for this customer
-            var customerRegularProducts = await _context.Orders
-                .Where(p => p.voertuig == vehicleId && p.klantnaam == customerName)
+            var customerRegularProducts = allProducts
+                .Where(p => p.klantnaam == customerName)
                 .Where(p => !heavyProductNames.Any(hp => 
                     p.artikelomschrijving != null && 
                     p.artikelomschrijving.Contains(hp)))
-                .ToListAsync();
+                .ToList();
 
             // Check if all heavy products are scanned
             bool allHeavyProductsScanned = allVehicleHeavyProducts.All(p => p.gescand);
@@ -349,7 +352,7 @@ namespace TestProject.Controllers
 
             // If we're scanning regular products (customer has regular products), 
             // only return true when all regular products are scanned
-            if (customerRegularProducts.Any())
+            if (customerRegularProducts.Any(p => p.gescand))
             {
                 return allHeavyProductsScanned && allRegularProductsScanned;
             }
