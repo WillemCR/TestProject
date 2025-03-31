@@ -52,8 +52,7 @@ namespace TestProject.Controllers
                     return BadRequest(new { success = false, message = "Barcode is verplicht" });
                 }
 
-                // Use async/await properly with ConfigureAwait
-                var product = await _context.Products
+                var product = await _context.Orders
                     .FirstOrDefaultAsync(p => p.orderregelnummer == request.Barcode)
                     .ConfigureAwait(false);
 
@@ -63,15 +62,21 @@ namespace TestProject.Controllers
                     return NotFound(new { success = false, message = "Product niet gevonden" });
                 }
 
-                // Guard against integer overflow
-                if (product.aantal >= int.MaxValue - 1)
+                // Parse string values to integers
+                if (!int.TryParse(product.aantal, out int currentAantal))
                 {
-                    _logger.LogError("Product count would overflow: {Barcode}", request.Barcode);
-                    return BadRequest(new { success = false, message = "Maximum aantal overschreden" });
+                    currentAantal = 0;
+                    product.aantal = "0";
+                }
+
+                if (!int.TryParse(product.colli, out int colliValue))
+                {
+                    _logger.LogError("Invalid colli value for product: {Barcode}", request.Barcode);
+                    return BadRequest(new { success = false, message = "Ongeldige waarde voor colli" });
                 }
 
                 // Check remaining capacity
-                var remaining = product.colli - (product.aantal + product.gemeld);
+                var remaining = colliValue - (currentAantal + product.gemeld);
                 if (remaining <= 0)
                 {
                     _logger.LogWarning("Maximum product count reached for: {Barcode}", request.Barcode);
@@ -79,8 +84,8 @@ namespace TestProject.Controllers
                 }
 
                 // Increment the scanned count and check if complete
-                product.aantal += 1;
-                bool isComplete = product.aantal + product.gemeld == product.colli;
+                product.aantal = (currentAantal + 1).ToString();
+                bool isComplete = int.Parse(product.aantal) + product.gemeld == colliValue;
                 if (isComplete)
                 {
                     product.gescand = true;
@@ -148,7 +153,7 @@ namespace TestProject.Controllers
                 using var transaction = await _context.Database.BeginTransactionAsync();
                 try
                 {
-                    var product = await _context.Products
+                    var product = await _context.Orders
                         .FirstOrDefaultAsync(p => p.orderregelnummer == report.OrderregelNummer)
                         .ConfigureAwait(false);
 
@@ -157,8 +162,20 @@ namespace TestProject.Controllers
                         return NotFound(new { success = false, message = "Product niet gevonden" });
                     }
 
+                    // Parse string values to integers
+                    if (!int.TryParse(product.aantal, out int currentAantal))
+                    {
+                        currentAantal = 0;
+                        product.aantal = "0";
+                    }
+
+                    if (!int.TryParse(product.colli, out int colliValue))
+                    {
+                        return BadRequest(new { success = false, message = "Ongeldige waarde voor colli" });
+                    }
+
                     // Calculate remaining amount that can be reported
-                    int remainingAmount = product.colli - product.aantal - product.gemeld;
+                    int remainingAmount = colliValue - currentAantal - product.gemeld;
 
                     // Validate the reported amount
                     if (report.Amount > remainingAmount)
@@ -185,7 +202,7 @@ namespace TestProject.Controllers
                     
                     // Update product status
                     product.gemeld = report.Amount;
-                    if (product.aantal + product.gemeld == product.colli)
+                    if (currentAantal + product.gemeld == colliValue)
                     {
                         product.gescand = true;
                     }
@@ -198,7 +215,7 @@ namespace TestProject.Controllers
                     bool isComplete = false;
                     if (!string.IsNullOrEmpty(product.voertuig))
                     {
-                        isComplete = product.aantal + product.gemeld == product.colli;
+                        isComplete = currentAantal + product.gemeld == colliValue;
                         if (isComplete)
                         {
                             product.gescand = true;
@@ -281,14 +298,11 @@ namespace TestProject.Controllers
         private async Task<bool> CheckAllVehicleProductsScanned(string vehicleId)
         {
             // Get all products for this vehicle
-            var vehicleProducts = await _context.Products
+            var vehicleProducts = await _context.Orders
                 .Where(p => p.voertuig == vehicleId)
                 .ToListAsync();
 
-            bool allScanned;
-           
-             allScanned = vehicleProducts.All(p => p.gescand);
-           
+            bool allScanned = vehicleProducts.All(p => p.gescand);
 
             if (allScanned)
             {
@@ -311,48 +325,38 @@ namespace TestProject.Controllers
                 .Select(hp => hp.Name)
                 .ToListAsync();
 
-            // Get all products for this customer and vehicle
-            var customerProducts = await _context.Products
-                .Where(p => p.voertuig == vehicleId && p.klantnaam == customerName)
-                .ToListAsync();
-
-            // Separate heavy and regular products
-            var heavyProducts = customerProducts
-                .Where(p => heavyProductNames.Any(hp => 
-                    p.artikelomschrijving != null && 
-                    p.artikelomschrijving.Contains(hp)))
-                .ToList();
-
-            var regularProducts = customerProducts
-                .Where(p => !heavyProductNames.Any(hp => 
-                    p.artikelomschrijving != null && 
-                    p.artikelomschrijving.Contains(hp)))
-                .ToList();
-
-            // Check if there are any heavy products
-            if (heavyProducts.Any())
-            {
-                // If there are heavy products, they must all be scanned
-                return heavyProducts.All(p => p.gescand);
-            }
-
-            // If no heavy products, check regular products
-            // Only consider regular products complete if all heavy products for ALL customers are scanned
-            var allVehicleHeavyProducts = await _context.Products
+            // Get all heavy products for this vehicle
+            var allVehicleHeavyProducts = await _context.Orders
                 .Where(p => p.voertuig == vehicleId)
                 .Where(p => heavyProductNames.Any(hp => 
                     p.artikelomschrijving != null && 
                     p.artikelomschrijving.Contains(hp)))
                 .ToListAsync();
 
-            if (allVehicleHeavyProducts.Any() && !allVehicleHeavyProducts.All(p => p.gescand))
-            {
-                // If there are unscanned heavy products for any customer, return false
-                return false;
-            }
+            // Get all regular products for this customer
+            var customerRegularProducts = await _context.Orders
+                .Where(p => p.voertuig == vehicleId && p.klantnaam == customerName)
+                .Where(p => !heavyProductNames.Any(hp => 
+                    p.artikelomschrijving != null && 
+                    p.artikelomschrijving.Contains(hp)))
+                .ToListAsync();
 
-            // All heavy products are scanned, now check regular products for this customer
-            return regularProducts.All(p => p.gescand);
+            // Check if all heavy products are scanned
+            bool allHeavyProductsScanned = allVehicleHeavyProducts.All(p => p.gescand);
+            
+            // Check if all regular products for this customer are scanned
+            bool allRegularProductsScanned = customerRegularProducts.All(p => p.gescand);
+
+            // If we're scanning regular products (customer has regular products), 
+            // only return true when all regular products are scanned
+            if (customerRegularProducts.Any())
+            {
+                return allHeavyProductsScanned && allRegularProductsScanned;
+            }
+            
+            // If we're scanning heavy products (no regular products for this customer yet),
+            // return true when all heavy products are scanned
+            return allHeavyProductsScanned;
         }
     }
 }

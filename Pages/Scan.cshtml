@@ -4,168 +4,65 @@
     ViewData["Title"] = "Scan Producten";
 }
 
-<h1 class="text-3xl font-bold mb-4">@ViewData["Title"]</h1>
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-4xl font-bold text-gray-800 mb-8">Scan Producten</h1>
 
-<!-- Vehicle selection dropdown -->
-<div class="mb-4">
-    <label for="vehicleSelect" class="block text-sm font-medium text-gray-700">Selecteer Voertuig:</label>
-    <select id="vehicleSelect" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-        <option value="" disabled selected>Selecteer een voertuig</option>
-        @foreach (var vehicle in Model.UniqueVehicles)
-        {
-            if (vehicle != null)
+    <div class="mb-8">
+        <select id="vehicleSelect" class="block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+            <option value="">Selecteer een voertuig</option>
+            @foreach (var vehicleStatus in Model.VehicleStatuses)
             {
-                <option value="@vehicle" selected="@(vehicle == Model.SelectedVehicle)">@vehicle</option>
+                <option value="@vehicleStatus.VehicleId" selected="@(Model.SelectedVehicle == vehicleStatus.VehicleId)">
+                    @($"{vehicleStatus.VehicleId} ({vehicleStatus.ScannedProducts} / {vehicleStatus.TotalProducts})")
+                </option>
             }
-        }
-    </select>
-</div>
-
-<!-- Current customer info -->
-@if (!string.IsNullOrEmpty(Model.CurrentCustomer))
-{
-    <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-        <h2 class="text-xl font-semibold text-blue-800">Huidige Klant: @Model.CurrentCustomer</h2>
+        </select>
     </div>
-}
 
-<!-- Barcode scan form -->
-<form id="scanForm" onsubmit="return false;">
-    @Html.AntiForgeryToken()
-    <div class="flex flex-col mb-4">
-        <div class="mb-2">
-            <label for="barcodeInput" class="block text-sm font-medium text-gray-700">Scan Barcode:</label>
-            <input type="text" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" id="barcodeInput" autofocus />
-        </div>
+    <div class="mb-8">
+        <input type="text" 
+               id="barcodeInput" 
+               class="block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" 
+               placeholder="Scan barcode..." 
+               autocomplete="off"
+               autofocus />
     </div>
-</form>
 
-<!-- Products container -->
-<div class="mt-4" id="productsContainer">
-    @if (Model.SelectedVehicle != null)
+    @if (!string.IsNullOrEmpty(Model.SelectedVehicle))
     {
-        @if (Model.ShowRegularProductsMode && Model.AllHeavyProductsScanned)
-        {
-            <!-- Regular Products Mode -->
-            @if (!string.IsNullOrEmpty(Model.CurrentCustomer))
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Voertuig: @Model.SelectedVehicle</h2>
+            
+            @if (!Model.ShowRegularProductsMode && Model.AllHeavyOrdersScanned)
             {
-                <div class="mb-8">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Gewone producten</h2>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voltooid</th>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orderregelnummer</th>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artikelomschrijving</th>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Totaal</th>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gemeld</th>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gescand</th>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nog te laden</th>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acties</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach (var product in Model.RegularProducts)
-                            {
-                                <tr class="product-row" data-barcode="@product.orderregelnummer">
-                                    <td class="px-3 py-2 whitespace-nowrap"><input type="checkbox" class="scanned-checkbox" disabled @(product.gescand ? "checked" : "") /></td>
-                                    <td class="px-3 py-2 whitespace-nowrap">@product.orderregelnummer</td>
-                                    <td class="px-3 py-2 whitespace-nowrap">@product.artikelomschrijving</td>
-                                    <td class="px-3 py-2 whitespace-nowrap totaal-cell">@product.colli</td>
-                                    <td class="px-3 py-2 whitespace-nowrap gemeld-cell">@product.gemeld</td>
-                                    <td class="px-3 py-2 whitespace-nowrap geteld-cell">@product.aantal</td>
-                                    <td class="px-3 py-2 whitespace-nowrap over-cell @(product.colli - product.aantal - product.gemeld == 0 ? "text-green-500" : "text-red-500")">@(product.colli - @product.aantal - @product.gemeld)</td>
-                                    <td class="px-3 py-2 whitespace-nowrap">
-                                        <button type="button" class="px-2 py-1 text-sm text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 rounded-md" onclick="showMissingProductModal('@product.orderregelnummer')">
-                                            Melden
-                                        </button>
-                                    </td>
-                                </tr>
-                            }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <!-- Next customer button (only shown when all products for current customer are scanned) -->
-                @if (ViewData["NextCustomer"] != null)
-                {
-                    <form method="post" asp-page-handler="NextCustomer">
-                        <input type="hidden" name="vehicle" value="@Model.SelectedVehicle" />
-                        <input type="hidden" name="nextCustomer" value="@ViewData["NextCustomer"]" />
-                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md">
-                            Ga naar volgende klant: @ViewData["NextCustomer"]
-                        </button>
-                    </form>
-                }
-            }
-        }
-        else
-        {
-            <!-- Heavy Products Mode -->
-            @if (Model.HeavyProducts.Any())
-            {
-                <div class="mb-8">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Zware producten</h2>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voltooid</th>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orderregelnummer</th>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artikelomschrijving</th>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Totaal</th>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gemeld</th>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gescand</th>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nog te laden</th>
-                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acties</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach (var product in Model.HeavyProducts)
-                            {
-                                <tr class="product-row" data-barcode="@product.orderregelnummer">
-                                    <td class="px-3 py-2 whitespace-nowrap"><input type="checkbox" class="scanned-checkbox" disabled @(product.gescand ? "checked" : "") /></td>
-                                    <td class="px-3 py-2 whitespace-nowrap">@product.orderregelnummer</td>
-                                    <td class="px-3 py-2 whitespace-nowrap">@product.artikelomschrijving</td>
-                                    <td class="px-3 py-2 whitespace-nowrap totaal-cell">@product.colli</td>
-                                    <td class="px-3 py-2 whitespace-nowrap gemeld-cell">@product.gemeld</td>
-                                    <td class="px-3 py-2 whitespace-nowrap geteld-cell">@product.aantal</td>
-                                    <td class="px-3 py-2 whitespace-nowrap over-cell @(product.colli - product.aantal - product.gemeld == 0 ? "text-green-500" : "text-red-500")">@(product.colli - @product.aantal - @product.gemeld)</td>
-                                    <td class="px-3 py-2 whitespace-nowrap">
-                                        <button type="button" class="px-2 py-1 text-sm text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 rounded-md" onclick="showMissingProductModal('@product.orderregelnummer')">
-                                            Melden
-                                        </button>
-                                    </td>
-                                </tr>
-                            }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <!-- Show Regular Products button only when all heavy products are scanned -->
-                @if (Model.AllHeavyProductsScanned)
-                {
-                    <form method="post" asp-page-handler="ShowRegularProducts">
-                        <input type="hidden" name="vehicle" value="@Model.SelectedVehicle" />
-                        <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md">
-                            Ga naar gewone producten
-                        </button>
-                    </form>
-                }
-            }
-            else
-            {
-                <!-- No heavy products, go straight to regular products -->
-                <form method="post" asp-page-handler="ShowRegularProducts">
+                <form method="post" asp-page-handler="ShowRegularOrders" class="mb-4">
                     <input type="hidden" name="vehicle" value="@Model.SelectedVehicle" />
-                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md">
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
                         Ga naar gewone producten
                     </button>
                 </form>
             }
+
+            @if (Model.ShowRegularProductsMode && Model.NextCustomer != null && Model.RegularOrders.All(o => o.gescand))
+            {
+                <form method="post" asp-page-handler="NextCustomer" class="mb-4">
+                    <input type="hidden" name="vehicle" value="@Model.SelectedVehicle" />
+                    <input type="hidden" name="currentCustomer" value="@Model.CurrentCustomer" />
+                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                        Volgende klant: @Model.NextCustomer
+                    </button>
+                </form>
+            }
+        </div>
+
+        @if (!Model.ShowRegularProductsMode && Model.HeavyOrders.Any())
+        {
+            <partial name="_ProductTable" model='(Title: "Zware producten", Orders: Model.HeavyOrders, ShowCustomerName: true)' />
+        }
+        else if (Model.ShowRegularProductsMode && Model.RegularOrders.Any())
+        {
+            <h3 class="text-xl font-bold mb-4">Klant: @Model.CurrentCustomer</h3>
+            <partial name="_ProductTable" model='(Title: "Gewone producten", Orders: Model.RegularOrders, ShowCustomerName: false)' />
         }
     }
 </div>
@@ -227,7 +124,7 @@
             if (row) {
                 const artikelomschrijving = row.cells[2].textContent;
                 const orderregelnummer = row.cells[1].textContent;
-                const remainingAmount = parseInt(row.querySelector('.over-cell').textContent, 10);
+                const remainingAmount = parseInt(row.querySelector('.over-cell').textContent, 10) || 0;
 
                 // Set the values in the modal
                 reportOrderregel.value = orderregelnummer;
@@ -261,8 +158,11 @@
             // Handle vehicle selection
             vehicleSelect.addEventListener('change', function () {
                 const selectedVehicle = this.value;
-                const url = selectedVehicle ? `/Scan?vehicle=${encodeURIComponent(selectedVehicle)}` : '/Scan';
-                window.location.href = url;
+                if (selectedVehicle) {
+                    window.location.href = `/Scan?vehicle=${encodeURIComponent(selectedVehicle)}`;
+                } else {
+                    window.location.href = '/Scan';
+                }
             });
 
             // Handle barcode input
@@ -288,9 +188,9 @@
                                         geteldField.textContent = result.aantal;
                                     }
                                     if (overField) {
-                                        const totaal = parseInt(totaalField.textContent, 10);
-                                        const geteld = parseInt(geteldField.textContent, 10);
-                                        const gemeld = parseInt(gemeldField.textContent, 10);
+                                        const totaal = parseInt(totaalField.textContent, 10) || 0;
+                                        const geteld = parseInt(geteldField.textContent, 10) || 0;
+                                        const gemeld = parseInt(gemeldField.textContent, 10) || 0;
                                         let over = totaal - geteld - gemeld;
                                         if(over == 0) {
                                             overField.classList.add('text-green-500');
@@ -483,7 +383,14 @@
                             throw new Error(`HTTP ${response.status}: ${errorText}`);
                         }
 
-                        return await response.json();
+                        const result = await response.json();
+                        
+                        // If all heavy products are scanned, redirect to regular products mode
+                        if (result.allHeavyProductsScanned) {
+                            window.location.href = `/Scan?vehicle=${encodeURIComponent(vehicleSelect.value)}&mode=regular`;
+                        }
+
+                        return result;
                     } catch (error) {
                         attempt++;
                         if (attempt === maxRetries) {

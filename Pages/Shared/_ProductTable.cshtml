@@ -1,0 +1,70 @@
+@using TestProject.Models
+@model (string Title, IList<Order> Orders, bool ShowCustomerName)
+
+<div class="mb-8">
+    <h2 class="text-2xl font-bold text-gray-800 mb-4">@Model.Title</h2>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voltooid</th>
+                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orderregelnummer</th>
+                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artikelomschrijving</th>
+                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Totaal</th>
+                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gemeld</th>
+                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gescand</th>
+                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nog te laden</th>
+                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acties</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+            @{
+                string currentCustomer = null;
+                var orderedOrders = Model.Orders.OrderBy(o => o.klantnaam).ThenBy(o => o.orderregelnummer);
+            }
+            @foreach (var order in orderedOrders)
+            {   
+                @if (Model.ShowCustomerName && currentCustomer != order.klantnaam)
+                {
+                    currentCustomer = order.klantnaam;
+                    <tr class="bg-gray-50">
+                        <td class="px-3 py-2 whitespace-nowrap text-gray-800 font-semibold" colspan="8">
+                            Klant: @order.klantnaam
+                        </td>
+                    </tr>
+                }
+                <tr class="order-row" data-barcode="@order.orderregelnummer">
+                    <td class="px-3 py-2 whitespace-nowrap">
+                        <input type="checkbox" class="scanned-checkbox" disabled @(order.gescand ? "checked" : "") />
+                    </td>
+                    <td class="px-3 py-2 whitespace-nowrap">@order.orderregelnummer</td>
+                    <td class="px-3 py-2 whitespace-nowrap">@order.artikelomschrijving</td>
+                    <td class="px-3 py-2 whitespace-nowrap totaal-cell">@order.colli</td>
+                    <td class="px-3 py-2 whitespace-nowrap gemeld-cell">@order.gemeld</td>
+                    <td class="px-3 py-2 whitespace-nowrap geteld-cell">@order.aantal</td>
+                    @{
+                        var isComplete = false;
+                        var remaining = 0;
+                        if (int.TryParse(order.colli, out int colliValue) && 
+                            int.TryParse(order.aantal, out int aantalValue))
+                        {
+                            remaining = colliValue - aantalValue - order.gemeld;
+                            isComplete = remaining == 0;
+                        }
+                    }
+                    <td class="px-3 py-2 whitespace-nowrap over-cell @(isComplete ? "text-green-500" : "text-red-500")">
+                        @remaining
+                    </td>
+                    <td class="px-3 py-2 whitespace-nowrap">
+                        <button type="button" 
+                                class="px-2 py-1 text-sm text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 rounded-md" 
+                                onclick="showMissingProductModal('@order.orderregelnummer')">
+                            Melden
+                        </button>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

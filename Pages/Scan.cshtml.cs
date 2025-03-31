@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using TestProject.Data;
 using TestProject.Models;
+using Microsoft.Extensions.Logging;
 
 namespace TestProject.Pages
 {
@@ -19,25 +20,32 @@ namespace TestProject.Pages
     public class ScanModel : PageModel
     {
         private readonly ApplicationDbContext _context;
+        private readonly ILogger<ScanModel> _logger;
 
         /// <summary>
-        /// Constructor that injects the database context
+        /// Constructor that injects the database context and logger
         /// </summary>
         /// <param name="context">The application database context</param>
-        public ScanModel(ApplicationDbContext context)
+        /// <param name="logger">The logger for this page</param>
+        public ScanModel(ApplicationDbContext context, ILogger<ScanModel> logger)
         {
             _context = context;
+            _logger = logger;
+            // Initialize collections in constructor
+            VehicleStatuses = new List<VehicleStatus>();
+            RegularOrders = new List<Order>();
+            HeavyOrders = new List<Order>();
         }
 
         /// <summary>
-        /// List of heavy products for the selected vehicle
+        /// List of heavy orders for the selected vehicle
         /// </summary>
-        public IList<Product> HeavyProducts { get; set; } = new List<Product>();
+        public IList<Order> HeavyOrders { get; set; } = new List<Order>();
         
         /// <summary>
-        /// List of regular products for the selected vehicle
+        /// List of regular orders for the selected vehicle
         /// </summary>
-        public IList<Product> RegularProducts { get; set; } = new List<Product>();
+        public IList<Order> RegularOrders { get; set; } = new List<Order>();
         
         /// <summary>
         /// List of all unique vehicle identifiers in the system
@@ -55,174 +63,230 @@ namespace TestProject.Pages
         public string CurrentCustomer { get; set; }
 
         /// <summary>
-        /// Flag indicating if all heavy products are scanned
+        /// Flag indicating if all heavy orders are scanned
         /// </summary>
-        public bool AllHeavyProductsScanned { get; set; }
+        public bool AllHeavyOrdersScanned { get; set; }
         
         /// <summary>
-        /// Flag indicating if this page should show regular products instead of heavy products
+        /// Flag indicating if this page should show regular orders instead of heavy orders
         /// </summary>
-        public bool ShowRegularProductsMode { get; set; }
+        public bool ShowRegularOrdersMode { get; set; }
         
         /// <summary>
         /// Customer with the highest volgorde value
         /// </summary>
         public string HighestVolgordeCustomer { get; set; }
 
+        public List<VehicleStatus> VehicleStatuses { get; set; }
+
         /// <summary>
-        /// Handles navigation to regular products page
+        /// Flag indicating if this page should show regular products instead of heavy orders
         /// </summary>
-        public IActionResult OnPostShowRegularProducts(string vehicle)
+        public bool ShowRegularProductsMode { get; set; }
+
+        /// <summary>
+        /// List of all unique customers ordered by name
+        /// </summary>
+        public List<string> CustomerList { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Next customer to display
+        /// </summary>
+        public string NextCustomer { get; set; }
+
+        /// <summary>
+        /// Handles navigation to regular orders page
+        /// </summary>
+        public IActionResult OnPostShowRegularOrders(string vehicle)
         {
-            return RedirectToPage("Scan", new { vehicle = vehicle, mode = "regular" });
+            _logger.LogInformation($"Redirecting to regular orders for vehicle {vehicle}");
+            return RedirectToPage("Scan", new { vehicle, mode = "regular" });
         }
 
         /// <summary>
-        /// Handles navigation to the next customer's products
+        /// Handles navigation to the next customer's orders
         /// </summary>
         /// <param name="vehicle">The selected vehicle</param>
-        /// <param name="nextCustomer">The name of the next customer to display</param>
+        /// <param name="currentCustomer">The current customer</param>
         /// <returns>Redirect action to the same page with updated customer</returns>
-        public IActionResult OnPostNextCustomer(string vehicle, string nextCustomer)
+        public IActionResult OnPostNextCustomer(string vehicle, string currentCustomer)
         {
-            return RedirectToPage("Scan", new { vehicle = vehicle, mode = "regular", customer = nextCustomer });
+            if (string.IsNullOrEmpty(vehicle) || string.IsNullOrEmpty(currentCustomer))
+            {
+                return BadRequest(new { success = false, message = "Vehicle and current customer must be provided." });
+            }
+
+            // Get all customers for this vehicle
+            var customers = _context.Orders
+                .Where(o => o.voertuig == vehicle)
+                .Select(o => o.klantnaam)
+                .Distinct()
+                .OrderBy(k => k)
+                .ToList();
+
+            if (customers == null || !customers.Any())
+            {
+                return NotFound(new { success = false, message = "No customers found for this vehicle." });
+            }
+
+            // Find current customer index and get next customer
+            var currentIndex = customers.IndexOf(currentCustomer);
+            if (currentIndex == -1)
+            {
+                return NotFound(new { success = false, message = "Current customer not found in the list." });
+            }
+
+            if (currentIndex < customers.Count - 1)
+            {
+                var nextCustomer = customers[currentIndex + 1];
+                return RedirectToPage("Scan", new { vehicle, mode = "regular", customer = nextCustomer });
+            }
+
+            // If no next customer, just stay on current page
+            return RedirectToPage("Scan", new { vehicle, mode = "regular", customer = currentCustomer });
         }
 
         /// <summary>
         /// Handles GET requests to the page
-        /// Loads vehicle data and products based on the selected vehicle and customer
+        /// Loads vehicle data and orders based on the selected vehicle and customer
         /// </summary>
         /// <param name="vehicle">Optional vehicle identifier from query string</param>
+        /// <param name="mode">Optional mode parameter to show regular orders</param>
         /// <param name="customer">Optional customer name from query string</param>
-        /// <param name="mode">Optional mode parameter to show regular products</param>
-        public async Task<IActionResult> OnGetAsync(string vehicle = null, string customer = null, string mode = null)
+        public async Task<IActionResult> OnGetAsync(string vehicle = null, string mode = null, string customer = null)
         {
-            // Get unique vehicles from the database for the dropdown
-            UniqueVehicles = await _context.Products
+            try
+            {
+                SelectedVehicle = vehicle;
+                ShowRegularProductsMode = mode == "regular";
+                CurrentCustomer = customer;
+
+                // Always get vehicle statuses
+                VehicleStatuses = await GetVehicleStatusesAsync();
+
+                if (!string.IsNullOrEmpty(vehicle))
+                {
+                    _logger.LogInformation($"Loading orders for vehicle: {vehicle}");
+
+                    var allOrders = await _context.Orders
+                        .Where(o => o.voertuig == vehicle)
+                        .ToListAsync();
+
+                    _logger.LogInformation($"Found {allOrders.Count} total orders");
+
+                    var heavyProductNames = await _context.HeavyProducts
+                        .Select(hp => hp.Name)
+                        .ToListAsync();
+
+                    _logger.LogInformation($"Found {heavyProductNames.Count} heavy product names: {string.Join(", ", heavyProductNames)}");
+
+                    // Get all unique customers ordered by name
+                    CustomerList = allOrders
+                        .Select(o => o.klantnaam)
+                        .Distinct()
+                        .OrderBy(k => k)
+                        .ToList();
+
+                    _logger.LogInformation($"Found {CustomerList.Count} unique customers");
+
+                    // Split orders into heavy and regular
+                    HeavyOrders = allOrders
+                        .Where(o => heavyProductNames.Any(hp => 
+                            o.artikelomschrijving != null && 
+                            o.artikelomschrijving.ToLower().Contains(hp.ToLower())))
+                        .OrderBy(o => o.klantnaam)
+                        .ThenBy(o => o.orderregelnummer)
+                        .ToList();
+
+                    _logger.LogInformation($"Found {HeavyOrders.Count} heavy orders");
+
+                    // If there are no heavy orders or we're in regular mode
+                    if (!HeavyOrders.Any() || ShowRegularProductsMode)
+                    {
+                        // If no customer is selected, take the first one
+                        if (string.IsNullOrEmpty(CurrentCustomer) && CustomerList.Any())
+                        {
+                            CurrentCustomer = CustomerList.First();
+                            _logger.LogInformation($"Selected first customer: {CurrentCustomer}");
+                        }
+
+                        // Find the next customer in the list
+                        var currentIndex = CustomerList.IndexOf(CurrentCustomer);
+                        NextCustomer = currentIndex < CustomerList.Count - 1 ? CustomerList[currentIndex + 1] : null;
+
+                        // Get regular orders for current customer
+                        RegularOrders = allOrders
+                            .Where(o => !heavyProductNames.Any(hp => 
+                                o.artikelomschrijving != null && 
+                                o.artikelomschrijving.ToLower().Contains(hp.ToLower())))
+                            .Where(o => o.klantnaam == CurrentCustomer)
+                            .OrderByDescending(o => o.volgorde)
+                            .ToList();
+
+                        _logger.LogInformation($"Found {RegularOrders.Count} regular orders for customer {CurrentCustomer}");
+                        ShowRegularProductsMode = true;
+                    }
+
+                    // Check if all heavy orders are scanned
+                    AllHeavyOrdersScanned = HeavyOrders.Any() && HeavyOrders.All(o => o.gescand);
+                    _logger.LogInformation($"ShowRegularProductsMode: {ShowRegularProductsMode}, AllHeavyOrdersScanned: {AllHeavyOrdersScanned}");
+                }
+
+                return Page();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in OnGetAsync");
+                VehicleStatuses = new List<VehicleStatus>();
+                RegularOrders = new List<Order>();
+                HeavyOrders = new List<Order>();
+                return Page();
+            }
+        }
+
+        private async Task<List<VehicleStatus>> GetVehicleStatusesAsync()
+        {
+            var vehicles = await _context.Orders
                 .Select(p => p.voertuig)
                 .Distinct()
                 .Where(v => v != null)
-                .OrderBy(v => v)
                 .ToListAsync();
 
-            SelectedVehicle = vehicle;
-            ShowRegularProductsMode = mode == "regular";
+            var statuses = new List<VehicleStatus>();
 
-            if (!string.IsNullOrEmpty(vehicle))
+            foreach (var vehicleId in vehicles)
             {
-                // Get all heavy product names from the database
-                var heavyProductNames = await _context.HeavyProducts
-                    .Select(hp => hp.Name)
+                var orders = await _context.Orders
+                    .Where(p => p.voertuig == vehicleId)
                     .ToListAsync();
 
-                // Get all products for the selected vehicle
-                var allProducts = await _context.Products
-                    .Where(p => p.voertuig == vehicle)
-                    .OrderBy(p => p.volgorde) // Sort by volgorde
-                    .ToListAsync();
+                var scannedCount = orders.Count(p => p.gescand);
+                var totalCount = orders.Count;
 
-                // Get all heavy products regardless of customer
-                HeavyProducts = allProducts
-                    .Where(p => heavyProductNames.Any(hp => 
-                        p.artikelomschrijving != null && 
-                        p.artikelomschrijving.Contains(hp)))
-                        .OrderByDescending(p => p.volgorde)
-                    .ToList();
+                var status = "not-started";
+                if (scannedCount == totalCount)
+                    status = "completed";
+                else if (scannedCount > 0)
+                    status = "in-progress";
 
-                // Check if all heavy products are scanned
-                AllHeavyProductsScanned = HeavyProducts.All(p => p.gescand);
-
-                // Get normal products grouped by customer
-                var customerGroups = allProducts
-                    .Where(p => !heavyProductNames.Any(hp => 
-                        p.artikelomschrijving != null && 
-                        p.artikelomschrijving.Contains(hp)))
-                    .GroupBy(p => p.klantnaam)
-                    .Select(g => new
-                    {
-                        CustomerName = g.Key,
-                        Products = g.OrderByDescending(p => p.volgorde).ToList(),
-                        MaxVolgorde = g.Max(p => p.volgorde)
-                    })
-                    .OrderByDescending(g => g.MaxVolgorde)
-                    .ToList();
-
-                // Find customer with highest volgorde
-                HighestVolgordeCustomer = customerGroups.FirstOrDefault()?.CustomerName;
-
-                // Auto-redirect to regular products if there are no heavy products
-                if (!HeavyProducts.Any() && !ShowRegularProductsMode)
+                statuses.Add(new VehicleStatus
                 {
-                    return RedirectToPage("Scan", new { vehicle = vehicle, mode = "regular" });
-                }
-
-                if (ShowRegularProductsMode && AllHeavyProductsScanned)
-                {
-                    // Set the current customer if specified, otherwise use the one with highest volgorde
-                    if (!string.IsNullOrEmpty(customer) && customerGroups.Any(c => c.CustomerName == customer))
-                    {
-                        CurrentCustomer = customer;
-                    }
-                    else
-                    {
-                        CurrentCustomer = HighestVolgordeCustomer;
-                    }
-
-                    // Show regular products for the current customer
-                    RegularProducts = customerGroups
-                        .FirstOrDefault(c => c.CustomerName == CurrentCustomer)?.Products ?? new List<Product>();
-                    
-                    // Set the next customer if available AND all current customer products are scanned
-                    int currentIndex = customerGroups.FindIndex(c => c.CustomerName == CurrentCustomer);
-                    bool allCurrentCustomerProductsScanned = RegularProducts.All(p => p.gescand);
-                    
-                    if (currentIndex < customerGroups.Count - 1 && allCurrentCustomerProductsScanned)
-                    {
-                        string nextCustomer = customerGroups[currentIndex + 1].CustomerName;
-                        ViewData["NextCustomer"] = nextCustomer;
-                    }
-                }
-                else
-                {
-                    // In heavy products mode, only show heavy products
-                    RegularProducts = new List<Product>();
-                    CurrentCustomer = null;
-                }
+                    VehicleId = vehicleId,
+                    Status = status,
+                    ScannedProducts = scannedCount,
+                    TotalProducts = totalCount
+                });
             }
 
-            return Page();
+            return statuses;
         }
-        
-        /// <summary>
-        /// Checks if all products for the selected vehicle have been scanned or reported as missing
-        /// </summary>
-    //     private void CheckAllProductsScanned()
-    //     {
-    //         if (string.IsNullOrEmpty(SelectedVehicle))
-    //             return;
-                
-    //         // A product is considered processed if it's scanned
-    //         bool allHeavyScanned = HeavyProducts.All(p => p.gescand);
-    //         bool allRegularScanned = RegularProducts.All(p => p.gescand);
-            
-    //         // If all products are processed and there are products to process
-    //         if (allHeavyScanned && allRegularScanned && (HeavyProducts.Count > 0 || RegularProducts.Count > 0))
-    //         {
-    //             // Notify that all products for this vehicle are processed
-    //             NotifyVehicleComplete();
-    //         }
-    //     }
-        
-    //     /// <summary>
-    //     /// Placeholder method for future Navision integration
-    //     /// Will be implemented to send a message to Navision when all products are processed
-    //     /// </summary>
-    //     protected virtual void NotifyVehicleComplete()
-    //     {
-    //         // This method will be implemented in the future to send a message to Navision
-    //         // For now, it's just a placeholder that logs to the console
-    //         Console.WriteLine($"Alle producten voor voertuig {SelectedVehicle} zijn gescand of gemeld.");
-    //     }
-    // }
-}
+    }
+
+    public class VehicleStatus
+    {
+        public string VehicleId { get; set; }
+        public string Status { get; set; }
+        public int ScannedProducts { get; set; }
+        public int TotalProducts { get; set; }
+    }
 }

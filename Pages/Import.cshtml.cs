@@ -71,7 +71,7 @@ namespace TestProject.Pages
                     int colliValue = 0;
                     int.TryParse(worksheet.Cells[row,16].Text, out colliValue);
 
-                    var product = new Product
+                    var product = new Order
                     {
                         orderno = worksheet.Cells[row, 2].Text,
                         verzendwijze = worksheet.Cells[row, 3].Text,
@@ -87,8 +87,8 @@ namespace TestProject.Pages
                         bron = worksheet.Cells[row, 13].Text,
                         artikelomschrijving = worksheet.Cells[row, 14].Text,
                         lengte = worksheet.Cells[row, 15].Text,
-                        colli = colliValue,
-                        aantal = aantalValue,
+                        colli = colliValue.ToString(),
+                        aantal = aantalValue.ToString(),
                         referentie = worksheet.Cells[row, 18].Text,
                         voertuig = worksheet.Cells[row, 19].Text,
                         adres = worksheet.Cells[row, 20].Text,
@@ -96,9 +96,10 @@ namespace TestProject.Pages
                     };
 
                     // Check for existing product
-                    if (!_context.Products.Any(p => p.id == product.id))
+                    var existingProduct = await _context.Orders.FirstOrDefaultAsync(p => p.orderregelnummer == product.orderregelnummer);
+                    if (existingProduct == null)
                     {
-                        _context.Products.Add(product);
+                        await _context.Orders.AddAsync(product);
                     }
                 }
 
@@ -133,8 +134,8 @@ namespace TestProject.Pages
         {
             try
             {
-                var products = await _context.Products.ToListAsync();
-                _context.Products.RemoveRange(products);
+                var products = await _context.Orders.ToListAsync();
+                _context.Orders.RemoveRange(products);
                 await _context.SaveChangesAsync();
 
                 ImportStatus = new ImportResult
