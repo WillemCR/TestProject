@@ -32,7 +32,7 @@
     {
         <div class="mb-8">
             <h2 class="text-2xl font-bold text-gray-800 mb-4">Voertuig: @Model.SelectedVehicle</h2>
-            
+           
             @if (!Model.ShowRegularProductsMode && Model.AllHeavyOrdersScanned)
             {
                 <form method="post" asp-page-handler="ShowRegularOrders" class="mb-4">
@@ -57,11 +57,12 @@
 
         @if (Model.HeavyOrders.Any() && !Model.ShowRegularProductsMode)
         {
-            <partial name="_ProductTable" model='(Title: "Zware Orders", Orders: Model.HeavyOrders, ShowCustomerName: true, LosseArtikelenPerOrder: Model.LosseArtikelenPerOrder)' />
+            <partial name="_ProductTable" model='(Title: "Schermen", Orders: Model.HeavyOrders, ShowCustomerName: true, LosseArtikelenPerOrder: Model.LosseArtikelenPerOrder)' />
         }
         else
         {
-            <partial name="_ProductTable" model='(Title: "Reguliere Orders", Orders: Model.RegularOrders, ShowCustomerName: false, LosseArtikelenPerOrder: Model.LosseArtikelenPerOrder)' />
+             <h3 class="text-xl font-bold mb-4">Klant: @Model.CurrentCustomer</h3>
+            <partial name="_ProductTable" model='(Title: "Orders", Orders: Model.RegularOrders, ShowCustomerName: false, LosseArtikelenPerOrder: Model.LosseArtikelenPerOrder)' />
         }
     }
 </div>

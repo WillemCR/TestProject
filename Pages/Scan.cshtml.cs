@@ -127,7 +127,7 @@ namespace TestProject.Pages
                 .Where(o => o.voertuig == vehicle)
                 .Select(o => o.klantnaam)
                 .Distinct()
-                .OrderBy(k => k)
+                .OrderByDescending(volgorde => volgorde)
                 .ToList();
 
             if (customers == null || !customers.Any())

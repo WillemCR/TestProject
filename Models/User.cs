@@ -18,7 +18,6 @@ namespace TestProject.Models
     public enum UserRole
     {
         Laadploeg,
-        Planner,
         Admin
     }
 }

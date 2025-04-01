@@ -81,7 +81,25 @@ using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var context = services.GetRequiredService<ApplicationDbContext>();
-    context.Database.Migrate();
+    
+    try
+    {
+        // Check if there are any pending migrations
+        if (context.Database.GetPendingMigrations().Any())
+        {
+            context.Database.Migrate();
+            app.Logger.LogInformation("Applied pending database migrations.");
+        }
+        else
+        {
+            app.Logger.LogInformation("No pending migrations to apply.");
+        }
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "An error occurred while migrating the database.");
+        throw;
+    }
 }
 
 // Configure the HTTP request pipeline

@@ -11,27 +11,22 @@
     <header class="bg-white shadow">
         <nav class="w-full px-4 sm:px-6 lg:px-8">
             <div class="container mx-auto flex justify-between items-center py-4">
-                <a class="text-xl font-bold text-gray-800" asp-area="" asp-page="/Index">Suncircle LaadApp</a>
+                <a class="text-xl font-bold text-gray-800" asp-area="" asp-page="/Index">Suncircle Laden</a>
                 <ul class="flex space-x-6 items-center">
-                    <li>
-                <a class="text-gray-800 hover:text-blue-600" asp-area="" asp-page="/Index">Startpagina</a>
-                    </li>
-                   @if (User.IsInRole("Laadploeg") || User.IsInRole("Planner") || User.IsInRole("Admin"))
+                    
+                   @if (User.IsInRole("Laadploeg")|| User.IsInRole("Admin"))
                     {
                         <li>
                             <a class="text-gray-800 hover:text-blue-600" asp-area="" asp-page="/Scan">Producten Scannen</a>
                         </li>
                     }
-                   @if(User.IsInRole("Planner") || User.IsInRole("Admin"))
+                   @if(User.IsInRole("Admin"))
                    {
                         <li>
                             <a class="text-gray-800 hover:text-blue-600" asp-area="" asp-page="/Import">Import</a>
                         </li>
-                        @* <li>
-                            <a class="text-gray-800 hover:text-blue-600" asp-area="" asp-page="/Vehicle">Voertuigen</a>
-                        </li> *@
                         <li>
-                            <a class="text-gray-800 hover:text-blue-600" asp-area="" asp-page="/HeavyProducts">Zware Producten</a>
+                            <a class="text-gray-800 hover:text-blue-600" asp-area="" asp-page="/HeavyProducts">Schermen</a>
                         </li>
                     }
                     <li>

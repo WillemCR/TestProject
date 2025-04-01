@@ -65,8 +65,7 @@ namespace TestProject.Data
         return; // Seed data only if the database is empty.
     }
 
-    UserRole[] roles = { UserRole.Laadploeg, UserRole.Planner };
-
+    
    var users = new List<(User user, string password)>
     {
         (new User
