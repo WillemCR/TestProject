@@ -6,6 +6,7 @@ using TestProject.Services;
 using TestProject.Models;
 using Microsoft.AspNetCore.Identity;
 using System.Net.Mail;
+using TestProject.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -60,6 +61,12 @@ builder.Services.AddRazorPages();
 // Add Controllers support
 builder.Services.AddControllers();
 
+// Configure EmailSettings using the Options pattern
+builder.Services.Configure<EmailSettings>(
+    builder.Configuration.GetSection("EmailSettings"));
+
+// Register EmailSender (als dat nog niet gebeurd is)
+// Kies de juiste lifetime: Transient is vaak goed voor SmtpClient
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 
 // Add antiforgery services

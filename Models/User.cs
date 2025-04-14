@@ -12,6 +12,8 @@ namespace TestProject.Models
         public UserRole Role { get; set; }
 
         public bool MustChangePassword { get; set; }
+
+        public bool ShowAll { get; set;}
     }
 
 

@@ -34,6 +34,9 @@
                                 Rol
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Alles Tonen
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Acties
                             </th>
                         </tr>
@@ -50,6 +53,15 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @user.Role
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <form method="post" asp-page-handler="ToggleShowAll" asp-route-id="@user.Id">
+                                        @Html.AntiForgeryToken()
+                                        <input type="checkbox" 
+                                               onchange="this.form.submit()" 
+                                               @(user.ShowAll ? "checked" : "")
+                                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                    </form>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center">

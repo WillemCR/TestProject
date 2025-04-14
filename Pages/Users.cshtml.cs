@@ -39,5 +39,16 @@ namespace TestProject.Pages
             }
             return RedirectToPage();
         }
+
+        public async Task<IActionResult> OnPostToggleShowAllAsync(int id)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user != null)
+            {
+                user.ShowAll = !user.ShowAll;
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToPage();
+        }
     }
 }

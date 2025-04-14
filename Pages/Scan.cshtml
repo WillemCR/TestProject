@@ -2,6 +2,8 @@
 @model ScanModel
 @{
     ViewData["Title"] = "Scan Producten";
+
+    var showAllProducts = Model.CurrentUser?.ShowAll ?? false;
 }
 
 <div class="container mx-auto px-4 py-8">
@@ -10,7 +12,7 @@
     <div class="mb-8">
         <select id="vehicleSelect" class="block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
             <option value="">Selecteer een voertuig</option>
-            @foreach (var vehicleStatus in Model.VehicleStatuses)
+            @foreach (var vehicleStatus in Model.VehicleStatuses.OrderBy(v => v.VehicleId))
             {
                 <option value="@vehicleStatus.VehicleId" selected="@(Model.SelectedVehicle == vehicleStatus.VehicleId)">
                     @($"{vehicleStatus.VehicleId} ({vehicleStatus.ScannedProducts} / {vehicleStatus.TotalProducts})")
@@ -19,62 +21,140 @@
         </select>
     </div>
 
-    <div class="mb-8">
-        <input type="text" 
-               id="barcodeInput" 
-               class="block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" 
-               placeholder="Scan barcode..." 
-               autocomplete="off"
-               autofocus />
-    </div>
-
     @if (!string.IsNullOrEmpty(Model.SelectedVehicle))
     {
+        var vehicleStatus = Model.VehicleStatuses.FirstOrDefault(v => v.VehicleId == Model.SelectedVehicle);
+        if (vehicleStatus != null)
+        {
+            var percentage = Math.Round((double)vehicleStatus.ScannedProducts / vehicleStatus.TotalProducts * 100);
+            <div id="vehicleProgress" class="mb-4 px-4 py-2 rounded-lg font-semibold text-sm">
+                Voortgang: @vehicleStatus.ScannedProducts van @vehicleStatus.TotalProducts (@percentage%)
+            </div>
+        }
+
         <div class="mb-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Voertuig: @Model.SelectedVehicle</h2>
-           
-            @if (!Model.ShowRegularProductsMode && Model.AllHeavyOrdersScanned)
+            <input type="text" 
+                   id="barcodeInput" 
+                   class="block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" 
+                   placeholder="Scan barcode..." 
+                   autocomplete="off"
+                   autofocus
+                   disabled="@(string.IsNullOrEmpty(Model.SelectedVehicle))" />
+        </div>
+
+        @* --- Button Logic (Customer-by-Customer Mode) --- *@
+        @if (!showAllProducts)
+        {
+            if (Model.IsKlantFaseCompleet && !string.IsNullOrEmpty(Model.NextCustomerId))
             {
-                <form method="post" asp-page-handler="ShowRegularOrders" class="mb-4">
+                <form method="post" asp-page-handler="NextCustomer" class="mt-4">
                     <input type="hidden" name="vehicle" value="@Model.SelectedVehicle" />
+                        <input type="hidden" name="currentCustomer" value="@Model.SelectedCustomer" />
+                        <input type="hidden" name="mode" value="@Model.SelectedMode" />
+                        <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                            Volgende Klant: @Model.NextCustomerId
+                        </button>
+                    </form>
+                }
+            else if (Model.ShowGoToRegularButton)
+            {
+                <form method="post" asp-page-handler="NextCustomer" class="mb-4"> @* Still use NextCustomer handler *@
+                    <input type="hidden" name="vehicle" value="@Model.SelectedVehicle" />
+                    <input type="hidden" name="currentCustomer" value="@Model.SelectedCustomer" />
+                    <input type="hidden" name="mode" value="@Model.SelectedMode" />
                     <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
                         Ga naar gewone producten
                     </button>
                 </form>
             }
-
-            @if (Model.ShowRegularProductsMode && Model.NextCustomer != null && Model.RegularOrders.All(o => o.gescand))
+            else if (Model.IsVoertuigVolledigCompleet)
             {
-                <form method="post" asp-page-handler="NextCustomer" class="mb-4">
-                    <input type="hidden" name="vehicle" value="@Model.SelectedVehicle" />
-                    <input type="hidden" name="currentCustomer" value="@Model.CurrentCustomer" />
-                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
-                        Volgende klant: @Model.NextCustomer
-                    </button>
-                </form>
+                <p class="text-green-600 font-semibold mb-4">Alle producten voor dit voertuig zijn gescand.</p>
             }
-        </div>
-
-        @if (Model.HeavyOrders.Any() && !Model.ShowRegularProductsMode)
+            
+            @* No else needed - if none of the flags are true, no button/message is shown for navigation *@
+        }
+        @* Properly close the above if block and start a new one for the ShowAll case *@
+        else if (showAllProducts)
         {
-            <partial name="_ProductTable" model='(Title: "Schermen", Orders: Model.HeavyOrders, ShowCustomerName: true, LosseArtikelenPerOrder: Model.LosseArtikelenPerOrder)' />
+            @* Nested correctly inside the else if block *@
+            @if (Model.CurrentUser?.ShowAll == true)
+            {
+                @if (Model.ShowGoToRegularButton)
+                {
+                    <form method="get" asp-page="Scan" class="mb-4">
+                        <input type="hidden" name="vehicle" value="@Model.SelectedVehicle" />
+                        <input type="hidden" name="mode" value="regular" />
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                            Ga naar overige producten
+                        </button>
+                    </form>
+                }
+                else if (Model.IsVoertuigVolledigCompleet)
+                {
+                    <p class="text-green-600 font-semibold mb-4">Alle producten voor dit voertuig zijn gescand.</p>
+                }
+            }
+        }
+
+        @* Controleer eerst of er überhaupt producten zijn om te tonen *@
+        @if (Model.ProductsToScan != null && Model.ProductsToScan.Any())
+        {
+            @* Bepaal de titel dynamisch op basis van de modus en klant *@
+            string tableTitle;
+            if (!string.IsNullOrEmpty(Model.SelectedCustomer))
+            {
+                tableTitle = $"Producten voor Klant {Model.SelectedCustomer} ({ (Model.SelectedMode == "regular" ? "Regulier" : "Zwaar") })";
+            }
+            else
+            {
+                tableTitle = $"{(Model.SelectedMode == "regular" ? "Reguliere" : "Zware")} Producten voor Voertuig {Model.SelectedVehicle}";
+            }
+
+            @* Bepaal of de klantnaam kolom getoond moet worden *@
+            bool showCustomerNameColumn = string.IsNullOrEmpty(Model.SelectedCustomer); // Toon alleen als we *niet* op klant filteren
+
+            @if (Model.CurrentUser?.ShowAll == true)
+            {
+                <div class="mb-4">
+                    <partial name="_ProductTable" 
+                            model='(Title: $"Alle {(Model.SelectedMode == "regular" ? "Reguliere" : "Zware")} Producten", 
+                                    Orders: Model.ProductsToScan, 
+                                    ShowCustomerName: true, 
+                                    LosseArtikelenPerOrder: Model.LosseArtikelenPerOrder)' />
+                </div>
+            }
+            else
+            {
+                <div class="mb-4">
+                    <partial name="_ProductTable" 
+                            model='(Title: $"Producten voor {Model.SelectedCustomer}", 
+                                    Orders: Model.ProductsToScan, 
+                                    ShowCustomerName: false, 
+                                    LosseArtikelenPerOrder: Model.LosseArtikelenPerOrder)' />
+                </div>
+
+                }
         }
         else
         {
-             <h3 class="text-xl font-bold mb-4">Klant: @Model.CurrentCustomer</h3>
-            <partial name="_ProductTable" model='(Title: "Orders", Orders: Model.RegularOrders, ShowCustomerName: false, LosseArtikelenPerOrder: Model.LosseArtikelenPerOrder)' />
+            @* Toon de melding als ProductsToScan leeg is *@
+            <div class="alert alert-warning" role="alert">
+                Geen orders gevonden voor deze selectie.
+            </div>
+            @* Optioneel: Voeg hier knoppen toe om terug te gaan of een andere selectie te maken *@
         }
     }
 </div>
 
 <!-- Missing product modal -->
-<!-- (Keep the existing modal code unchanged) -->
 <div id="missingProductModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div class="mt-3 text-center">
             <h3 class="text-lg leading-6 font-medium text-gray-900">Product Niet Gevonden</h3>
             <div class="mt-2 px-7 py-3">
                 <p class="text-sm text-gray-500 mb-3" id="missingProductName"></p>
+
                 <form id="reportMissingForm" method="post" action="/api/ScanApi/ReportMissing">
                     @Html.AntiForgeryToken()
                     <input type="hidden" id="reportOrderregel" name="orderregelnummer" value="" />
@@ -89,16 +169,16 @@
                     </div>
                     <div class="mb-4">
                         <label for="reportComments" class="block text-sm font-medium text-gray-700 text-left">Opmerkingen:</label>
-                        <textarea id="reportComments" name="comments" rows="3" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea>
+                        <textarea id="reportComments" name="comments" rows="3" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">N/A</textarea>
                     </div>
                     <div class="mb-4">
                         <label for="reportAmount" class="block text-sm font-medium text-gray-700 text-left">Aantal:</label>
-                        <input 
-                            type="number" 
-                            id="reportAmount" 
-                            name="amount" 
-                            class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" 
-                            min="0" 
+                        <input
+                            type="number"
+                            id="reportAmount"
+                            name="amount"
+                            class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                            min="1"
                             step="1"
                         >
                     </div>
@@ -118,315 +198,525 @@
 
 @section Scripts {
     <script>
-        // Function to show the missing product modal
-        function showMissingProductModal(barcode) {
-            const row = document.querySelector(`tr[data-barcode="${barcode}"]`);
-            if (row) {
-                const artikelomschrijving = row.cells[2].textContent;
-                const orderregelnummer = row.cells[1].textContent;
-                const remainingAmount = parseInt(row.querySelector('.over-cell').textContent, 10) || 0;
+        // --- Functie om voortgang van voertuig bij te werken ---
+        
 
-                // Set the values in the modal
-                reportOrderregel.value = orderregelnummer;
-                reportArtikel.value = artikelomschrijving;
-                missingProductName.textContent = `Product: ${artikelomschrijving} (${orderregelnummer})`;
+        // --- Functie om API response te verwerken en UI bij te werken ---
+        function handleApiResponse(result, barcode) {
+            console.log(`handleApiResponse aangeroepen voor barcode/orderRegelNummer: ${barcode}`);
+            const row = document.getElementById(`order-${barcode}`);
+            if (!row) {
+                console.error(`Row with id order-${barcode} not found.`);
+                alert(`Fout: Kon de productrij voor barcode ${barcode} niet vinden in de tabel.`);
+                return;
+            }
 
-                // Set max value for amount input
-                const reportAmount = document.getElementById('reportAmount');
-                reportAmount.max = remainingAmount;
-                reportAmount.value = remainingAmount;
+            // Haal relevante cellen en elementen op
+            const scannedCountCell = row.querySelector('.scanned-count');
+            const reportedCountCell = row.querySelector('.reported-count');
+            const remainingCountCell = row.querySelector('.remaining-count');
+            const totaalCell = row.querySelector('.totaal-cell');
+            const completionCheckbox = row.querySelector('.completion-checkbox');
+            const decrementBtn = row.querySelector('.decrement-scan-btn');
+            const losseArtikelenRow = row.nextElementSibling;
 
-                // Show the modal
-                missingProductModal.classList.remove('hidden');
+            // --- Reset potentiële foutstatus ---
+            row.classList.remove('bg-red-200'); // Verwijder tijdelijke fout-highlight
+
+            if (result && result.success) {
+                console.log(`API Succes voor ${barcode}:`, result);
+
+                // Als de order compleet is, ververs de pagina
+                if (result.isOrderCompleet || result.isKlantFaseCompleet || result.isVoertuigModusCompleet) {
+                    console.log("Order/Fase compleet gedetecteerd, pagina wordt ververst...");
+                    window.location.reload();
+                    return; // Stop verdere verwerking
+                }
+
+                // --- Waarden bijwerken ---
+                const newCount = parseInt(result.newCount || '0', 10);
+                const newGemeld = parseInt(result.newGemeld || '0', 10);
+                const totaal = parseInt(totaalCell?.textContent || '0', 10);
+
+                if (scannedCountCell) scannedCountCell.textContent = newCount;
+                if (reportedCountCell) reportedCountCell.textContent = newGemeld;
+
+                // Bereken en update "Nog te laden"
+                const remaining = Math.max(0, totaal - newCount - newGemeld);
+                if (remainingCountCell) {
+                    remainingCountCell.textContent = remaining;
+                    remainingCountCell.classList.toggle('text-green-600', remaining <= 0);
+                    remainingCountCell.classList.toggle('text-red-600', remaining > 0);
+                }
+
+                // --- Status bijwerken (Checkbox, Rijstijl, Decrement Knop) ---
+                const isOrderCompleet = result.isOrderCompleet ?? false;
+
+                if (completionCheckbox) {
+                    completionCheckbox.checked = isOrderCompleet;
+                }
+
+                // Update rij achtergrond
+                row.classList.remove('bg-white', 'hover:bg-gray-50', 'bg-green-100', 'hover:bg-green-200'); // Reset
+                row.classList.add(isOrderCompleet ? 'bg-green-100' : 'bg-white', isOrderCompleet ? 'hover:bg-green-200' : 'hover:bg-gray-50');
+
+                 // Update achtergrond van losse artikelen rij
+                if (losseArtikelenRow && losseArtikelenRow.cells.length === 1) {
+                    losseArtikelenRow.classList.remove('bg-gray-50', 'bg-green-50');
+                    losseArtikelenRow.classList.add(isOrderCompleet ? 'bg-green-50' : 'bg-gray-50');
+                }
+
+                // Update decrement button state gebaseerd op NIEUWE aantal
+                if (decrementBtn) {
+                    decrementBtn.disabled = (newCount <= 0);
+                }
+
+                // --- Conditioneel uitvoeren van voltooiingslogica ---
+                if (result.hasOwnProperty('isKlantFaseCompleet') || result.hasOwnProperty('isVoertuigModusCompleet') || result.hasOwnProperty('isVoertuigVolledigCompleet')) {
+                    handleCompletionLogic(result);
+                }
+
+                // Update algemene voortgangsteller
+                if (result.hasOwnProperty('vehicleScannedCount') && result.hasOwnProperty('vehicleTotalCount')) {
+                    updateVehicleProgress(result.vehicleScannedCount, result.vehicleTotalCount);
+                }
+
+            } else {
+                // --- Handel API Fout af ---
+                console.error(`API Fout voor ${barcode}:`, result);
+                const errorMessage = result?.message || "Onbekende API fout.";
+                // Toon fout subtiel, bv. log naar console, of gebruik een aparte error area
+                // alert(`Fout bijwerken ${barcode}: ${errorMessage}`); // Vermijd storende alerts indien mogelijk
+
+                // Voeg een tijdelijke visuele indicator toe aan de rij
+                row.classList.add('bg-red-200'); // Tijdelijke highlight
+
+                // Zorg ervoor dat de knop weer wordt ingeschakeld bij een fout,
+                // tenzij de fout was omdat het aantal al 0 was.
+                // We gebruiken het *huidig weergegeven* aantal (aannemend dat dit niet veranderd is door de mislukte API call).
+                const currentCountBeforeFail = scannedCountCell ? parseInt(scannedCountCell.textContent, 10) : 0;
+
+                if (decrementBtn) {
+                     decrementBtn.disabled = (currentCountBeforeFail <= 0); // Schakel weer in als aantal > 0 was vóór de mislukte poging
+                     console.log(`API mislukt voor ${barcode}. Knop disabled status ingesteld op: ${decrementBtn.disabled} gebaseerd op aantal ${currentCountBeforeFail}`);
+                }
             }
         }
-        
-        // Wait for the DOM to be fully loaded before attaching event listeners
-        document.addEventListener('DOMContentLoaded', function () {
-            // DOM element references
-            const barcodeInput = document.getElementById('barcodeInput');
+
+        // --- Functie om voltooiingslogica af te handelen ---
+        function handleCompletionLogic(result) {
+            // Haal benodigde data op (zorg dat deze beschikbaar is in de scope)
+            const showAll = @(Model.CurrentUser?.ShowAll.ToString().ToLower() ?? "false");
+            // Haal de *huidige* klant op uit de UI of een variabele, indien nodig
+            // Dit is een voorbeeld, pas aan naar hoe je de huidige klant bijhoudt
+            const currentCustomerHeader = document.querySelector('.customer-header'); // Zoek naar de klant header in de tabel
+            const currentCustomer = currentCustomerHeader ? currentCustomerHeader.dataset.customerName : null;
+
+            // 1. Check voor Volledig Voertuig Compleet (hoogste prioriteit)
+            if (result.isVoertuigVolledigCompleet) {
+                console.log("Voertuig volledig compleet gedetecteerd.");
+                alert('Alle producten voor dit voertuig zijn gescand of gemeld!');
+                // Optioneel: Update UI, verberg invoerveld, toon grote melding
+                document.getElementById('barcodeInput').disabled = true;
+                // Verberg navigatieknoppen en toon voltooid bericht
+                hideNavigationButtons();
+                showCompletionMessage("Alle producten voor dit voertuig zijn gescand.");
+                return; // Stop verdere checks
+            }
+
+            // 2. Check voor Klant Fase Compleet (alleen in klant-per-klant modus)
+            if (!showAll && result.isKlantFaseCompleet && currentCustomer) {
+                 console.log(`Klantfase compleet gedetecteerd voor ${currentCustomer}.`);
+                 alert(`Alle items voor de huidige fase van klant ${currentCustomer} zijn gescand/gemeld.`);
+                 // Zoek en klik de juiste navigatieknop (indien zichtbaar)
+                 clickVisibleNavigationButton();
+                 return; // Stop verdere checks
+            }
+
+            // 3. Check voor Voertuig Modus Compleet (alleen in ShowAll modus)
+            if (showAll && result.isVoertuigModusCompleet) {
+                console.log("Voertuig modus compleet gedetecteerd (ShowAll).");
+                alert('Alle items voor de huidige modus (schermen/gewoon) op dit voertuig zijn gescand/gemeld.');
+                 // Zoek en klik de juiste navigatieknop (indien zichtbaar)
+                 clickVisibleNavigationButton();
+                return; // Stop verdere checks
+            }
+        }
+
+        // --- Hulpfuncties voor voltooiingslogica ---
+        function hideNavigationButtons() {
+            // Verberg alle mogelijke navigatieknoppen/formulieren
+            document.querySelectorAll('form[method="post"][asp-page-handler="NextCustomer"], form[method="get"][asp-page="Scan"]').forEach(form => {
+                form.classList.add('hidden');
+            });
+        }
+
+        function showCompletionMessage(message) {
+            // Zoek of maak een element om het bericht te tonen
+            let messageElement = document.getElementById('completionMessage');
+            if (!messageElement) {
+                // Maak het element als het niet bestaat (bijv. boven de tabel)
+                const container = document.querySelector('.product-table-container'); // Of een andere geschikte plek
+                if (container) {
+                    messageElement = document.createElement('p');
+                    messageElement.id = 'completionMessage';
+                    messageElement.className = 'text-green-600 font-semibold mb-4';
+                    container.parentNode.insertBefore(messageElement, container);
+                }
+            }
+            if (messageElement) {
+                messageElement.textContent = message;
+                messageElement.classList.remove('hidden');
+            }
+        }
+
+        function clickVisibleNavigationButton() {
+            // Prioriteitsvolgorde: Volgende Zwaar -> Ga naar Gewoon -> Volgende Gewoon -> Ga naar Overige (ShowAll)
+            const buttonsToCheck = [
+                'form[method="post"][asp-page-handler="NextCustomer"] button[type="submit"]', // Algemene selector voor klant-per-klant
+                'form[method="get"][asp-page="Scan"] button[type="submit"]' // Selector voor ShowAll modus
+            ];
+
+            for (const selector of buttonsToCheck) {
+                const buttonForm = document.querySelector(selector)?.closest('form');
+                // Check of het formulier bestaat en niet verborgen is
+                if (buttonForm && !buttonForm.classList.contains('hidden')) {
+                    console.log("Klikken op zichtbare navigatieknop:", buttonForm.querySelector('button').textContent.trim());
+                    buttonForm.submit(); // Submit het formulier
+                    return; // Stop na het vinden van de eerste zichtbare knop
+                }
+            }
+            console.log("Geen actieve navigatieknop gevonden om op te klikken.");
+        }
+
+        // --- Functie voor decrement scan ---
+        async function decrementScan(barcode, vehicleId) {
+            const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+            const token = tokenInput?.value;
+            
+            if (!token) {
+                console.error("Anti-forgery token niet gevonden!");
+                alert("Beveiligingsfout: Kon geen token vinden. Herlaad de pagina.");
+                return;
+            }
+
+            try {
+                console.log(`Verwerken decrement voor ${barcode}, Voertuig: ${vehicleId}`);
+                const response = await fetch('/api/ScanApi/DecrementScan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': token,
+                    },
+                    body: JSON.stringify({ 
+                        Barcode: barcode, 
+                        VehicleId: vehicleId 
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server response:', response.status, errorText);
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('Decrement response:', result);
+
+                // Direct verversen van de pagina na succesvolle decrement
+                if (result && result.success) {
+                    window.location.reload();
+                    return;
+                }
+
+                handleApiResponse(result, barcode);
+
+            } catch (error) {
+                console.error('Fout tijdens decrement:', error);
+                alert(`Fout bij verwerken ${barcode}: ${error.message}`);
+                
+                const decrementButton = document.querySelector(`#order-${barcode} .decrement-scan-btn`);
+                if (decrementButton) {
+                    decrementButton.disabled = false;
+                }
+            }
+        }
+
+        // --- Functie om de modal te tonen ---
+        function showMissingProductModal(barcode, artikel) {
+            const modal = document.getElementById('missingProductModal');
+            const orderregelInput = document.getElementById('reportOrderregel');
+            const artikelInput = document.getElementById('reportArtikel'); // Hidden input voor artikel
+            const productNameDisplay = document.getElementById('missingProductName');
+            const amountInput = document.getElementById('reportAmount');
+            const commentsInput = document.getElementById('reportComments');
+            const reasonSelect = document.getElementById('reportReason');
+
+            const row = document.getElementById(`order-${barcode}`);
+            if (!row) {
+                 console.error("Kon rij niet vinden voor barcode:", barcode);
+                 alert("Fout: Kon de productrij niet vinden om te melden.");
+                 return;
+            }
+
+            // Haal waarden uit de tabelrij
+            const totaal = parseInt(row.querySelector('.totaal-cell')?.textContent || '0', 10);
+            const gescand = parseInt(row.querySelector('.scanned-count')?.textContent || '0', 10);
+            const gemeld = parseInt(row.querySelector('.reported-count')?.textContent || '0', 10);
+            const remainingAmount = Math.max(1, totaal - gescand - gemeld); // Minimaal 1 melden
+
+            // Vul modal velden
+            orderregelInput.value = barcode;
+            artikelInput.value = artikel; // Vul hidden artikel input
+            productNameDisplay.textContent = `Product: ${artikel} (${barcode})`;
+            amountInput.max = remainingAmount; // Max is wat nog over is
+            amountInput.value = remainingAmount; // Standaard alles melden wat over is
+            commentsInput.value = 'N/A'; // Reset opmerkingen
+            reasonSelect.value = 'Niet gevonden'; // Reset reden
+
+            modal.classList.remove('hidden');
+            amountInput.focus(); // Focus op aantal
+        }
+
+        // --- Event Listeners ---
+        document.addEventListener('DOMContentLoaded', () => {
             const vehicleSelect = document.getElementById('vehicleSelect');
+            const barcodeInput = document.getElementById('barcodeInput');
+            const productTableContainer = document.querySelector('.product-table-container');
+            const reportForm = document.getElementById('reportMissingForm');
+            const closeModalButton = document.getElementById('reportCancelBtn');
             const missingProductModal = document.getElementById('missingProductModal');
-            const reportOrderregel = document.getElementById('reportOrderregel');
-            const reportArtikel = document.getElementById('reportArtikel');
-            const missingProductName = document.getElementById('missingProductName');
-            const reportCancelBtn = document.getElementById('reportCancelBtn');
-            const reportMissingForm = document.getElementById('reportMissingForm');
 
-            // Event Listeners
+            // --- Event Listener voor Voertuig Selectie ---
+            if (vehicleSelect) {
+                vehicleSelect.addEventListener('change', function() {
+                    const selectedVehicleId = this.value;
+                    if (selectedVehicleId) {
+                        // Haal huidige query parameters op (om 'mode' te behouden)
+                        const currentUrl = new URL(window.location.href);
+                        const mode = currentUrl.searchParams.get('mode');
 
-            // Handle vehicle selection
-            vehicleSelect.addEventListener('change', function () {
-                const selectedVehicle = this.value;
-                if (selectedVehicle) {
-                    window.location.href = `/Scan?vehicle=${encodeURIComponent(selectedVehicle)}`;
-                } else {
-                    window.location.href = '/Scan';
-                }
-            });
-
-            // Handle barcode input
-            barcodeInput.addEventListener('keyup', async function (event) {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    const barcode = this.value.trim();
-
-                    if (barcode.length > 0) {
-                        try {
-                            const result = await processBarcodeWithRetry(barcode);
-
-                            if (result.success) {
-                                const row = document.querySelector(`tr[data-barcode="${barcode}"]`);
-                                if (row) {
-                                    const checkbox = row.querySelector('.scanned-checkbox');
-                                    const gemeldField = row.querySelector('.gemeld-cell');
-                                    const totaalField = row.querySelector('.totaal-cell');
-                                    const geteldField = row.querySelector('.geteld-cell');
-                                    const overField = row.querySelector('.over-cell');
-                                    // Update the aantal display
-                                    if (geteldField) {
-                                        geteldField.textContent = result.aantal;
-                                    }
-                                    if (overField) {
-                                        const totaal = parseInt(totaalField.textContent, 10) || 0;
-                                        const geteld = parseInt(geteldField.textContent, 10) || 0;
-                                        const gemeld = parseInt(gemeldField.textContent, 10) || 0;
-                                        let over = totaal - geteld - gemeld;
-                                        if(over == 0) {
-                                            overField.classList.add('text-green-500');
-                                            overField.classList.remove('text-red-500');
-                                        }
-                                        overField.textContent = over;
-                                    }
-                                     checkbox.checked = result.isComplete;
-                                    if (result.isComplete) {
-                                        row.classList.add('bg-green-300');
-                                        setTimeout(() => row.classList.remove('bg-green-300'), 2000);
-                                    } else {
-                                        // Turn yellow when not yet complete
-                                        row.classList.add('bg-yellow-300');
-                                        setTimeout(() => row.classList.remove('bg-yellow-300'), 2000);
-                                    }
-                                    
-                                    // Check if all products for this vehicle are scanned
-                                    if (result.allProductsScanned) {
-                                        // Show notification that all products are scanned
-                                        setTimeout(() => {
-                                            alert(`Alle producten voor dit voertuig zijn gescand of gemeld!`);
-                                        }, 500);
-                                    }
-                                    // Check if all products for current customer are scanned
-                                    else if (result.allCustomerProductsScanned) {
-                                        // Show notification that all products are scanned
-                                        setTimeout(() => {
-                                            alert(`Alle producten voor deze klant zijn gescand of gemeld!`);
-                                            // Reload the page to show the next customer button
-                                            window.location.reload();
-                                        }, 500);
-                                    }
-                                } else {
-                                    console.warn('Barcode niet gevonden:', barcode);
-                                }
-                            } else {
-                                throw new Error(result.message || 'API Fout');
-                            }
-                        } catch (error) {
-                            console.error('Error details:', error);
-                            const row = document.querySelector(`tr[data-barcode="${barcode}"]`);
-                            if (row) {
-                                row.classList.add('bg-red-100');
-                                setTimeout(() => {
-                                    row.classList.remove('bg-red-100');
-                                }, 500);
-                            } else {
-                                console.warn(`Barcode niet gevonden in lijst: ${barcode}`);
-                                alert(`Barcode ${barcode} niet gevonden in de lijst voor dit voertuig.`);
-                            }
+                        // Bouw de nieuwe URL op
+                        const newUrl = new URL(window.location.pathname, window.location.origin); // Basis URL (bv. /Scan)
+                        newUrl.searchParams.set('vehicle', selectedVehicleId);
+                        
+                        // Navigeer naar de nieuwe URL
+                        window.location.href = newUrl.toString();
+                    } else {
+                        // Optioneel: Handel geval af waar geen voertuig is geselecteerd
+                        // Bijvoorbeeld: tabel leegmaken, invoerveld disablen
+                        barcodeInput.disabled = true;
+                        // Je zou hier ook de tabel kunnen leegmaken of een bericht tonen
+                        if (productTableContainer) {
+                            // Simpele manier: vervang inhoud (pas op als er andere elementen zijn)
+                            // productTableContainer.innerHTML = '<p class="text-gray-600">Selecteer een voertuig om orders te zien.</p>';
                         }
-
-                        this.value = '';
-                        this.focus();
+                         // Navigeer naar de basis URL zonder vehicleId (en met mode indien aanwezig)
+                        const currentUrl = new URL(window.location.href);
+                        const baseUrl = new URL(window.location.pathname, window.location.origin);
+                        window.location.href = baseUrl.toString();
                     }
-                }
-            });
+                });
+            }
 
-            // Close modal when cancel button is clicked
-            reportCancelBtn.addEventListener('click', function () {
-                missingProductModal.classList.add('hidden');
-                barcodeInput.focus();
-            });
+            // --- Event Listener voor Barcode Input ---
+            if (barcodeInput && vehicleSelect) {
+                barcodeInput.addEventListener('keypress', function(event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault(); // Voorkom standaard form submit
+                        const barcode = this.value.trim();
+                        const vehicleId = vehicleSelect.value;
 
-            // Add function to handle missing product reports
-            async function processMissingProductReport(formData, maxRetries = 3) {
-                let attempt = 0;
-                while (attempt < maxRetries) {
+                        if (barcode && vehicleId) {
+                            processBarcode(barcode, vehicleId);
+                            this.value = ''; // Maak invoerveld leeg na verwerking
+                        } else if (!vehicleId) {
+                            alert("Selecteer eerst een voertuig.");
+                        } else {
+                            // Barcode is leeg, doe niets of geef feedback
+                        }
+                    }
+                });
+            }
+
+            // --- Event Listener voor Modal Sluiten ---
+            if (closeModalButton && missingProductModal) {
+                closeModalButton.addEventListener('click', () => {
+                    missingProductModal.classList.add('hidden');
+                });
+                // Optioneel: sluiten bij klikken buiten de modal
+                missingProductModal.addEventListener('click', (event) => {
+                    if (event.target === missingProductModal) {
+                        missingProductModal.classList.add('hidden');
+                    }
+                });
+            }
+
+            // --- Event Listener voor Melden Formulier Submit ---
+            if (reportForm) {
+                reportForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(reportForm);
+
                     try {
+                        console.log("Versturen van meldingsformulier via fetch...");
                         const response = await fetch('/api/ScanApi/ReportMissing', {
                             method: 'POST',
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest'
-                            },
                             body: formData
                         });
 
+                        // --- Verbeterde Foutafhandeling ---
                         if (!response.ok) {
-                            const errorText = await response.text();
-                            throw new Error(`HTTP ${response.status}: ${errorText}`);
-                        }
-
-                        return await response.json();
-                    } catch (error) {
-                        attempt++;
-                        if (attempt === maxRetries) {
-                            throw error;
-                        }
-                        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-                    }
-                }
-            }
-
-            // Update the form submission handler
-            reportMissingForm.addEventListener('submit', async function (event) {
-                event.preventDefault();
-
-                const formData = new FormData(this);
-                const amount = parseInt(formData.get('amount'), 10);
-                const maxAmount = parseInt(document.getElementById('reportAmount').max, 10);
-
-                if (amount > maxAmount) {
-                    alert(`U kunt maximaal ${maxAmount} producten melden als ontbrekend.`);
-                    return;
-                }
-                if (!formData.get('comments').trim()) {
-                    formData.set('comments', 'Ontbrekend product gemeld');
-                }
-
-                try {
-                    const result = await processMissingProductReport(formData);
-
-                    if (result.success) {
-                        // Update UI with the result
-                        const row = document.querySelector(`tr[data-barcode="${reportOrderregel.value}"]`);
-                        if (row) {
-                            const checkbox = row.querySelector('.scanned-checkbox');
-                            const gemeldField = row.querySelector('.gemeld-cell');
-                            const totaalField = row.querySelector('.totaal-cell');
-                            const geteldField = row.querySelector('.geteld-cell');
-                            const overField = row.querySelector('.over-cell');
-                            
-                            if (gemeldField) {
-                                gemeldField.textContent = result.aantalGemeld;
+                            // Begin met een standaard foutmelding
+                            let errorDetail = `Serverfout: ${response.status} ${response.statusText}`;
+                            try {
+                                // Probeer eerst JSON te parsen (vaak gebruikt voor API fouten)
+                                const errorJson = await response.json();
+                                // Gebruik de message property indien aanwezig, anders de hele JSON string
+                                errorDetail = errorJson.message || JSON.stringify(errorJson);
+                            } catch (jsonError) {
+                                // Als JSON parsen mislukt, probeer als platte tekst
+                                try {
+                                    const plainText = await response.text();
+                                    // Gebruik de tekst alleen als deze niet leeg is
+                                    if (plainText) {
+                                        errorDetail = plainText;
+                                    }
+                                } catch (textError) {
+                                    // Als beide mislukken, behoud de initiële statusmelding
+                                    console.error("Kon serverfout niet parsen (noch JSON, noch tekst).", textError);
+                                }
                             }
-                            
-                            if (overField) {
-                                const totaal = parseInt(totaalField.textContent, 10);
-                                const geteld = parseInt(geteldField.textContent, 10);
-                                const gemeld = parseInt(gemeldField.textContent, 10);
-                                overField.textContent = totaal - geteld - gemeld;
-                            }
-                            checkbox.checked = result.isComplete;
-                            
-                            // Check completion status
-                            if (result.allProductsScanned) {
-                                setTimeout(() => {
-                                    alert(`Alle producten voor dit voertuig zijn gescand of gemeld!`);
-                                }, 500);
-                            } else if (result.allCustomerProductsScanned) {
-                                setTimeout(() => {
-                                    alert(`Alle producten voor deze klant zijn gescand of gemeld!`);
-                                    window.location.reload();
-                                }, 500);
-                            }
+                            // Gooi nu een error met de verzamelde details
+                            console.error('Server response (fout):', response.status, errorDetail);
+                            throw new Error(errorDetail);
                         }
+                        // --- Einde Verbeterde Foutafhandeling ---
 
-                        // Close the modal
-                        missingProductModal.classList.add('hidden');
-                        barcodeInput.focus();
-                    } else {
-                        throw new Error(result.message || 'Mislukt om ontbrekend product te melden');
-                    }
-                } catch (error) {
-                    console.error('Fout bij het melden van het ontbrekende product:', error);
-                    alert('Fout bij het melden van het ontbrekende product: ' + error.message);
-                }
-            });
-
-            // Add debouncing for barcode input
-            const debounce = (func, wait) => {
-                let timeout;
-                return function executedFunction(...args) {
-                    const later = () => {
-                        clearTimeout(timeout);
-                        func(...args);
-                    };
-                    clearTimeout(timeout);
-                    timeout = setTimeout(later, wait);
-                };
-            };
-
-            // Improved error handling and retry logic
-            async function processBarcodeWithRetry(barcode, maxRetries = 3) {
-                let attempt = 0;
-                while (attempt < maxRetries) {
-                    try {
-                        const response = await fetch('/api/ScanApi/ProcessBarcode', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-Requested-With': 'XMLHttpRequest'
-                            },
-                            body: JSON.stringify({ barcode })
-                        });
-
-                        if (!response.ok) {
-                            const errorText = await response.text();
-                            throw new Error(`HTTP ${response.status}: ${errorText}`);
-                        }
-
+                        // Verwerk de succesvolle JSON response
                         const result = await response.json();
-                        
-                        // If all heavy products are scanned, redirect to regular products mode
-                        if (result.allHeavyProductsScanned) {
-                            window.location.href = `/Scan?vehicle=${encodeURIComponent(vehicleSelect.value)}&mode=regular`;
-                        }
+                        console.log("ReportMissing response (succes):", result);
 
-                        return result;
+                        if (result.success) {
+                            // ... (sluit modal, roep handleApiResponse aan, reset form) ...
+                            if (missingProductModal) {
+                                missingProductModal.classList.add('hidden');
+                            }
+                            if (typeof handleApiResponse === 'function' && result.orderRegelNummer) {
+                                handleApiResponse(result, result.orderRegelNummer);
+                            } else {
+                                console.warn("handleApiResponse of orderRegelNummer ontbreekt in response.");
+                                alert(result.message || 'Product succesvol gemeld.');
+                            }
+                            reportForm.reset();
+                        } else {
+                            // Toon de foutmelding van de server (uit de succesvolle JSON response)
+                            alert(result.message || 'Er is een fout opgetreden bij het melden.');
+                        }
                     } catch (error) {
-                        attempt++;
-                        if (attempt === maxRetries) {
-                            throw error;
-                        }
-                        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+                        // Vang netwerkfouten of de gegooide error van hierboven op
+                        console.error('Fout tijdens melden (gevangen):', error);
+                        // Toon de error.message (die nu de errorDetail bevat)
+                        alert(`Fout bij melden: ${error.message || 'Onbekende client/netwerkfout.'}`);
                     }
-                }
+                });
+            } else {
+                console.warn("Element met ID 'reportMissingForm' niet gevonden.");
             }
 
-            // Improved form validation
-            function validateMissingProductForm(formData) {
-                const amount = parseInt(formData.get('amount'), 10);
-                const maxAmount = parseInt(document.getElementById('reportAmount').max, 10);
-                const comments = formData.get('comments').trim();
+            // --- Event Delegation voor knoppen in de tabel ---
+            if (productTableContainer) {
+                productTableContainer.addEventListener('click', function(event) {
+                    const target = event.target;
 
-                if (isNaN(amount) || amount <= 0) {
-                    throw new Error('Aantal moet een positief getal zijn');
-                }
+                    // Check voor Decrement knop
+                    const decrementButton = target.closest('.decrement-scan-btn');
+                    if (decrementButton && !decrementButton.disabled) {
+                        const barcode = decrementButton.dataset.barcode;
+                        const vehicleId = vehicleSelect.value;
+                        if (barcode && vehicleId) {
+                            decrementButton.disabled = true; // Voorkom dubbelklikken direct
+                            decrementScan(barcode, vehicleId); // Roep async functie aan
+                        } else {
+                            console.error("Kon barcode of vehicleId niet vinden voor decrement knop.");
+                            alert("Kon benodigde data niet vinden om scan te verminderen.");
+                        }
+                        return; // Stop verdere bubbling/checks
+                    }
 
-                if (amount > maxAmount) {
-                    throw new Error(`U kunt maximaal ${maxAmount} producten melden als ontbrekend`);
-                }
-
-                if (!formData.get('reason')) {
-                    throw new Error('Selecteer een reden');
-                }
-
-                return true;
+                    // Check voor Melden knop
+                    const reportButton = target.closest('.report-missing-btn');
+                    if (reportButton) {
+                        const barcode = reportButton.dataset.barcode;
+                        const artikel = reportButton.dataset.artikel; // Haal artikelnaam op
+                        if (barcode && artikel) {
+                            showMissingProductModal(barcode, artikel);
+                        } else {
+                             console.error("Kon barcode of artikel niet vinden voor meld knop.");
+                             alert("Kon benodigde data niet vinden om product te melden.");
+                        }
+                        return; // Stop verdere bubbling/checks
+                    }
+                });
             }
 
-            // Add error boundary
-            window.addEventListener('error', function(event) {
-                console.error('Global error:', event.error);
-                alert('Er is een fout opgetreden. Vernieuw de pagina en probeer het opnieuw.');
-            });
-        });
+            // Initial focus on barcode input if a vehicle is selected
+            if (vehicleSelect && vehicleSelect.value) {
+                barcodeInput.disabled = false; // Zorg dat het veld enabled is
+                barcodeInput.focus();
+            } else if (barcodeInput) {
+                 barcodeInput.disabled = true; // Disable als geen voertuig is geselecteerd
+            }
+
+        }); // End DOMContentLoaded
+
+        // --- Functie voor verwerken van barcode scans ---
+        async function processBarcode(barcode, vehicleId) {
+            const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+            const token = tokenInput?.value;
+
+            if (!token) {
+                console.error("Anti-forgery token niet gevonden!");
+                alert("Beveiligingsfout: Kon geen token vinden. Herlaad de pagina.");
+                return;
+            }
+
+            try {
+                console.log(`Verwerken barcode: ${barcode} voor voertuig: ${vehicleId}`);
+                const response = await fetch('/api/ScanApi/ProcessBarcode', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify({ Barcode: barcode, VehicleId: vehicleId })
+                });
+
+                let result;
+                try {
+                    result = await response.json();
+                    console.log('ProcessBarcode response:', result);
+                } catch (jsonError) {
+                    console.error('Kon JSON response niet parsen:', jsonError);
+                    const responseText = await response.text();
+                    console.error('Ruwe response tekst:', responseText);
+                    throw new Error('Server response was geen geldige JSON');
+                }
+
+                if (result.success) {
+                    handleApiResponse(result, barcode);
+                } else {
+                    // Toon foutmelding aan gebruiker
+                    alert(result.message || 'Er is een fout opgetreden bij het verwerken van de barcode.');
+                }
+
+            } catch (error) {
+                console.error('Fout tijdens verwerken barcode:', error);
+                alert(`Fout bij verwerken ${barcode}: ${error.message}`);
+            } finally {
+                // Focus terug naar barcode input voor volgende scan
+                document.getElementById('barcodeInput').focus();
+            }
+        }
     </script>
 }
